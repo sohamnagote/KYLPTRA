@@ -1419,7 +1419,56 @@
           </div>
         </div>
 
-        <!-- 3. EXPORT SETTINGS -->
+        <!-- 3. OPTIONAL CLOUD AI (GOOGLE GEMINI) -->
+        <div class="liquid-glass-card rounded-2xl p-5 flex flex-col gap-4">
+          <div class="flex items-center justify-between border-b border-outline-variant/20 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[19px] text-primary">psychology</span>
+              <h3 class="font-headline-md text-sm font-bold text-on-surface">Optional AI Enhancements (Google Gemini)</h3>
+            </div>
+            <span class="text-[11px] font-code-sm text-on-surface-variant">Zero Cloud Lock-in • 100% Local Default</span>
+          </div>
+
+          <p class="font-body-md text-xs text-on-surface-variant">
+            KLYPTRA works completely offline with zero API keys required. You can optionally connect a free Google AI Studio key to generate enhanced viral hooks, punchy titles, and hashtag recommendations.
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="sm:col-span-2">
+              <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">Google AI Studio API Key</label>
+              <div class="flex gap-2">
+                <input id="set-gemini-key" type="password" placeholder="Enter API Key (never committed or leaked)" class="flex-1 bg-surface-container-low border border-outline-variant/40 rounded-xl px-3 py-2 font-code-sm text-xs text-on-surface">
+                <button onclick="testGeminiConnectionUI()" class="apple-btn px-3 py-2 rounded-xl bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-title-sm text-xs font-semibold shrink-0">Test Key</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">Gemini Model</label>
+              <select id="set-gemini-model" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-xl p-2 font-title-sm text-xs text-on-surface">
+                <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (Fast)</option>
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro (Deep)</option>
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-outline-variant/20">
+            <div class="flex flex-wrap items-center gap-4 text-xs">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input id="set-gemini-enabled" type="checkbox" class="accent-primary w-3.5 h-3.5">
+                <span class="font-title-sm text-[11px] text-on-surface">Enable Cloud Enhancements</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input id="set-gemini-consent-transcript" type="checkbox" class="accent-primary w-3.5 h-3.5">
+                <span class="font-title-sm text-[11px] text-on-surface">Allow Transcript Hook Summaries</span>
+              </label>
+            </div>
+            <div id="gemini-test-status" class="text-xs font-code-sm text-on-surface-variant">Status: Local Only Mode Active</div>
+          </div>
+        </div>
+
+        <!-- 4. EXPORT SETTINGS -->
         <div class="liquid-glass-card rounded-2xl p-5 flex flex-col gap-4">
           <div class="flex items-center gap-2 border-b border-outline-variant/20 pb-2.5">
             <span class="material-symbols-outlined text-[19px] text-primary">ios_share</span>

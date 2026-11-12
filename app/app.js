@@ -48,6 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadBrollLibrary();
   loadMotionTemplates();
   loadSystemVoices();
+  loadGeminiSettings();
   checkFirstLaunchSetup();
 
   // Initial pill and micro-interactions
@@ -2811,5 +2812,97 @@ function toggleReducedMotion(enabled) {
   }
   if (window.__klyptraShader) {
     window.__klyptraShader.setReducedMotion(enabled);
+  }
+}
+
+// ----------------- Gemini Cloud Integration UI -----------------
+
+async function loadGeminiSettings() {
+  try {
+    const res = await fetch(`${API_BASE}/gemini/config`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const enabledEl = document.getElementById("set-gemini-enabled");
+    const consentEl = document.getElementById("set-gemini-consent-transcript");
+    const modelEl = document.getElementById("set-gemini-model");
+    const statusEl = document.getElementById("gemini-test-status");
+    const keyEl = document.getElementById("set-gemini-key");
+
+    if (enabledEl) enabledEl.checked = !!data.enabled;
+    if (consentEl) consentEl.checked = !!data.consent_transcript;
+    if (modelEl && data.model) modelEl.value = data.model;
+    if (keyEl && data.has_key) keyEl.placeholder = `Configured: ${data.masked_key}`;
+    if (statusEl) {
+      statusEl.textContent = data.has_key ? "Status: Connected & Ready" : "Status: Local Only Mode Active";
+    }
+  } catch (err) {
+    console.warn("Failed to load Gemini settings:", err);
+  }
+}
+
+async function saveGeminiSettingsUI() {
+  try {
+    const enabled = document.getElementById("set-gemini-enabled")?.checked || false;
+    const consentTranscript = document.getElementById("set-gemini-consent-transcript")?.checked || false;
+    const model = document.getElementById("set-gemini-model")?.value || "gemini-2.5-flash";
+    const apiKey = document.getElementById("set-gemini-key")?.value || "";
+
+    const payload = {
+      enabled: enabled,
+      api_key: apiKey,
+      model: model,
+      consent_transcript: consentTranscript,
+      consent_video: false,
+      local_only_mode: !enabled
+    };
+
+    await fetch(`${API_BASE}/gemini/config`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  } catch (err) {
+    console.warn("Error saving Gemini config:", err);
+  }
+}
+
+async function testGeminiConnectionUI() {
+  const statusEl = document.getElementById("gemini-test-status");
+  const keyInput = document.getElementById("set-gemini-key");
+  const model = document.getElementById("set-gemini-model")?.value || "gemini-2.5-flash";
+  const apiKey = keyInput?.value?.trim() || "";
+
+  if (statusEl) statusEl.textContent = "Testing Google Gemini API connection...";
+
+  try {
+    const res = await fetch(`${API_BASE}/gemini/test`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled: true, api_key: apiKey, model: model })
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (statusEl) statusEl.textContent = `Connected successfully to ${data.model}!`;
+      if (window.KlyptraMotionEngine) {
+        KlyptraMotionEngine.showToast({
+          type: "success",
+          title: "Gemini Connected",
+          message: `Successfully validated ${data.model} with Google AI Studio.`
+        });
+      }
+      // Auto-save verified configuration
+      saveGeminiSettingsUI();
+    } else {
+      if (statusEl) statusEl.textContent = `Connection failed: ${data.error}`;
+      if (window.KlyptraMotionEngine) {
+        KlyptraMotionEngine.showToast({
+          type: "error",
+          title: "Gemini Connection Failed",
+          message: data.error
+        });
+      }
+    }
+  } catch (err) {
+    if (statusEl) statusEl.textContent = `Connection error: ${err.message}`;
   }
 }

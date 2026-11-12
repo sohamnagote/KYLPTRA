@@ -1833,6 +1833,68 @@ def stream_media_file(path: str, request: Request):
     }
     return StreamingResponse(iter_file(), status_code=206, headers=headers)
 
+# ----------------- Gemini API Integration Endpoints -----------------
+from .gemini_service import load_gemini_config, save_gemini_config, test_gemini_connection, enhance_clip_metadata, SUPPORTED_MODELS
+
+class GeminiConfigRequest(BaseModel):
+    enabled: bool
+    api_key: Optional[str] = ""
+    model: Optional[str] = "gemini-2.5-flash"
+    consent_transcript: Optional[bool] = False
+    consent_video: Optional[bool] = False
+    local_only_mode: Optional[bool] = True
+
+class GeminiEnhanceRequest(BaseModel):
+    clip_title: str
+    transcript_segment: str
+
+@app.get("/api/gemini/config")
+def get_gemini_configuration():
+    cfg = load_gemini_config()
+    # Mask API key for secure display
+    masked_key = ""
+    raw_key = cfg.get("api_key", "")
+    if raw_key and len(raw_key) > 8:
+        masked_key = raw_key[:4] + "..." + raw_key[-4:]
+    elif raw_key:
+        masked_key = "********"
+    return {
+        "enabled": cfg.get("enabled", False),
+        "has_key": bool(raw_key),
+        "masked_key": masked_key,
+        "model": cfg.get("model", "gemini-2.5-flash"),
+        "supported_models": SUPPORTED_MODELS,
+        "consent_transcript": cfg.get("consent_transcript", False),
+        "consent_video": cfg.get("consent_video", False),
+        "local_only_mode": cfg.get("local_only_mode", True)
+    }
+
+@app.post("/api/gemini/config")
+def update_gemini_configuration(req: GeminiConfigRequest):
+    cfg = load_gemini_config()
+    cfg["enabled"] = req.enabled
+    if req.api_key and req.api_key.strip():
+        cfg["api_key"] = req.api_key.strip()
+    if req.model:
+        cfg["model"] = req.model
+    cfg["consent_transcript"] = req.consent_transcript
+    cfg["consent_video"] = req.consent_video
+    cfg["local_only_mode"] = req.local_only_mode
+    ok = save_gemini_config(cfg)
+    return {"success": ok}
+
+@app.post("/api/gemini/test")
+def test_gemini_key(req: GeminiConfigRequest):
+    cfg = load_gemini_config()
+    key = req.api_key.strip() if req.api_key and req.api_key.strip() else cfg.get("api_key", "")
+    model = req.model or cfg.get("model", "gemini-2.5-flash")
+    result = test_gemini_connection(key, model)
+    return result
+
+@app.post("/api/gemini/enhance-clip")
+def enhance_clip(req: GeminiEnhanceRequest):
+    return enhance_clip_metadata(req.clip_title, req.transcript_segment)
+
 # ----------------- Mount Static Frontend -----------------
 from fastapi.staticfiles import StaticFiles
 
