@@ -1,4 +1,5 @@
-// GPU-efficient, subtle continuous ambient background shader supporting Light & Dark Graphite modes
+// KLYPTRA Flowfield — Real GPU-accelerated organic fluid motion shader
+// Continuously animated domain-warped ribbon flowfield beneath Liquid Glass
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
     module.exports = factory();
@@ -12,39 +13,168 @@
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
 
-    const gl = canvas.getContext("webgl", { alpha: true, antialias: false, powerPreference: "low-power" });
+    // Use WebGL2 if available for optimal performance, fallback to WebGL1
+    let gl = canvas.getContext("webgl2", { alpha: false, antialias: false, powerPreference: "high-performance" });
+    let isWebGL2 = true;
+    if (!gl) {
+      isWebGL2 = false;
+      gl = canvas.getContext("webgl", { alpha: false, antialias: false, powerPreference: "default" });
+    }
     if (!gl) {
       initCanvas2DFallback(canvas);
       return;
     }
 
-    const vsSource = `
+    const vsSource = isWebGL2 ? `#version 300 es
+      in vec2 position;
+      void main() {
+        gl_Position = vec4(position, 0.0, 1.0);
+      }
+    ` : `
       attribute vec2 position;
       void main() {
         gl_Position = vec4(position, 0.0, 1.0);
       }
     `;
 
-    const fsSource = `
-      precision mediump float;
+    const fsSource = isWebGL2 ? `#version 300 es
+      precision highp float;
+      out vec4 fragColor;
       uniform vec2 u_resolution;
       uniform float u_time;
-      uniform vec3 u_colA;
-      uniform vec3 u_colB;
-      uniform vec3 u_colC;
-      uniform float u_intensity;
+      uniform vec3 u_base;
+      uniform vec3 u_ribbon1;
+      uniform vec3 u_ribbon2;
+      uniform vec3 u_highlight;
+
+      // 2D Rotation
+      mat2 rot(float a) {
+        float c = cos(a), s = sin(a);
+        return mat2(c, -s, s, c);
+      }
+
+      // Smooth organic gradient noise
+      vec2 hash2(vec2 p) {
+        p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+        return -1.0 + 2.0 * fract(sin(p) * 43758.5453123);
+      }
+
+      float gnoise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(mix(dot(hash2(i + vec2(0.0, 0.0)), f - vec2(0.0, 0.0)),
+                       dot(hash2(i + vec2(1.0, 0.0)), f - vec2(1.0, 0.0)), u.x),
+                   mix(dot(hash2(i + vec2(0.0, 1.0)), f - vec2(0.0, 1.0)),
+                       dot(hash2(i + vec2(1.0, 1.0)), f - vec2(1.0, 1.0)), u.x), u.y);
+      }
+
+      float fbm(vec2 p) {
+        float v = 0.0;
+        float a = 0.55;
+        mat2 r = rot(0.55);
+        for (int i = 0; i < 4; i++) {
+          v += a * gnoise(p);
+          p = r * p * 2.05;
+          a *= 0.5;
+        }
+        return v;
+      }
 
       void main() {
-        vec2 st = gl_FragCoord.xy / u_resolution;
-        float t = u_time * 0.11;
+        vec2 p = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+        float t = u_time * 0.16;
 
-        // Subtle drifting harmonic noise
-        float n1 = sin(st.x * 2.4 + t) * cos(st.y * 1.9 - t * 0.65);
-        float n2 = cos(st.x * 1.7 - t * 0.75) * sin(st.y * 2.1 + t);
-        float blend = smoothstep(-0.85, 0.85, n1 + n2);
+        // KLYPTRA Flowfield: 2-stage organic domain warping
+        vec2 q = vec2(
+          fbm(p * 1.2 + vec2(t * 0.14, t * 0.08)),
+          fbm(p * 1.2 + vec2(2.4, 1.8) - vec2(t * 0.09, t * 0.12))
+        );
 
-        vec3 color = mix(u_colA, mix(u_colB, u_colC, blend), u_intensity);
-        gl_FragColor = vec4(color, 1.0);
+        vec2 r = vec2(
+          fbm(p * 1.4 + 2.8 * q + vec2(1.7, 9.2) + vec2(t * 0.12, -t * 0.08)),
+          fbm(p * 1.4 + 2.8 * q + vec2(8.3, 2.8) + vec2(-t * 0.07, t * 0.11))
+        );
+
+        float f = fbm(p * 1.6 + 3.2 * r);
+
+        // Fluid ribbon contours & caustics
+        float ribbon = smoothstep(-0.35, 0.55, f + 0.3 * sin(p.x * 1.5 + t));
+        float contour = smoothstep(0.35, 0.8, sin(f * 4.71 + t * 0.6) * 0.5 + 0.5);
+        float sheen = pow(clamp(f * 1.25 + 0.25, 0.0, 1.0), 3.2) * 0.4;
+
+        vec3 col = mix(u_base, u_ribbon1, ribbon);
+        col = mix(col, u_ribbon2, contour * 0.55);
+        col += u_highlight * sheen;
+
+        fragColor = vec4(col, 1.0);
+      }
+    ` : `
+      precision highp float;
+      uniform vec2 u_resolution;
+      uniform float u_time;
+      uniform vec3 u_base;
+      uniform vec3 u_ribbon1;
+      uniform vec3 u_ribbon2;
+      uniform vec3 u_highlight;
+
+      mat2 rot(float a) {
+        float c = cos(a), s = sin(a);
+        return mat2(c, -s, s, c);
+      }
+
+      vec2 hash2(vec2 p) {
+        p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+        return -1.0 + 2.0 * fract(sin(p) * 43758.5453123);
+      }
+
+      float gnoise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(mix(dot(hash2(i + vec2(0.0, 0.0)), f - vec2(0.0, 0.0)),
+                       dot(hash2(i + vec2(1.0, 0.0)), f - vec2(1.0, 0.0)), u.x),
+                   mix(dot(hash2(i + vec2(0.0, 1.0)), f - vec2(0.0, 1.0)),
+                       dot(hash2(i + vec2(1.0, 1.0)), f - vec2(1.0, 1.0)), u.x), u.y);
+      }
+
+      float fbm(vec2 p) {
+        float v = 0.0;
+        float a = 0.55;
+        mat2 r = rot(0.55);
+        for (int i = 0; i < 4; i++) {
+          v += a * gnoise(p);
+          p = r * p * 2.05;
+          a *= 0.5;
+        }
+        return v;
+      }
+
+      void main() {
+        vec2 p = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+        float t = u_time * 0.16;
+
+        vec2 q = vec2(
+          fbm(p * 1.2 + vec2(t * 0.14, t * 0.08)),
+          fbm(p * 1.2 + vec2(2.4, 1.8) - vec2(t * 0.09, t * 0.12))
+        );
+
+        vec2 r = vec2(
+          fbm(p * 1.4 + 2.8 * q + vec2(1.7, 9.2) + vec2(t * 0.12, -t * 0.08)),
+          fbm(p * 1.4 + 2.8 * q + vec2(8.3, 2.8) + vec2(-t * 0.07, t * 0.11))
+        );
+
+        float f = fbm(p * 1.6 + 3.2 * r);
+
+        float ribbon = smoothstep(-0.35, 0.55, f + 0.3 * sin(p.x * 1.5 + t));
+        float contour = smoothstep(0.35, 0.8, sin(f * 4.71 + t * 0.6) * 0.5 + 0.5);
+        float sheen = pow(clamp(f * 1.25 + 0.25, 0.0, 1.0), 3.2) * 0.4;
+
+        vec3 col = mix(u_base, u_ribbon1, ribbon);
+        col = mix(col, u_ribbon2, contour * 0.55);
+        col += u_highlight * sheen;
+
+        gl_FragColor = vec4(col, 1.0);
       }
     `;
 
@@ -52,6 +182,9 @@
       const s = gl.createShader(type);
       gl.shaderSource(s, source);
       gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+        console.warn("Shader compile error:", gl.getShaderInfoLog(s));
+      }
       return s;
     }
 
@@ -76,16 +209,16 @@
     const posLocation = gl.getAttribLocation(program, "position");
     const resLocation = gl.getUniformLocation(program, "u_resolution");
     const timeLocation = gl.getUniformLocation(program, "u_time");
-    const colALocation = gl.getUniformLocation(program, "u_colA");
-    const colBLocation = gl.getUniformLocation(program, "u_colB");
-    const colCLocation = gl.getUniformLocation(program, "u_colC");
-    const intensityLocation = gl.getUniformLocation(program, "u_intensity");
+    const baseLocation = gl.getUniformLocation(program, "u_base");
+    const ribbon1Location = gl.getUniformLocation(program, "u_ribbon1");
+    const ribbon2Location = gl.getUniformLocation(program, "u_ribbon2");
+    const highlightLocation = gl.getUniformLocation(program, "u_highlight");
 
     function resize() {
-      // Render at 1/2 resolution for minimal GPU footprint
-      const scale = 0.5;
-      const w = Math.max(320, Math.floor(window.innerWidth * scale));
-      const h = Math.max(240, Math.floor(window.innerHeight * scale));
+      // Crisp 0.75 device resolution balance for smooth 60 FPS
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      const w = Math.max(320, Math.floor(window.innerWidth * dpr * 0.75));
+      const h = Math.max(240, Math.floor(window.innerHeight * dpr * 0.75));
       if (canvas.width !== w || canvas.height !== h) {
         canvas.width = w;
         canvas.height = h;
@@ -96,37 +229,36 @@
     window.addEventListener("resize", resize);
     resize();
 
-    // Palettes
+    // Curated KLYPTRA Flowfield Palettes:
+    // Light: Sophisticated pearl base, soft silver contours, muted lavender drift, clean specular rim
+    // Dark: Graphite slate base, rich charcoal ribbons, subtle deep indigo flow, gentle surface sheen
     const PALETTES = {
       light: {
-        colA: [0.984, 0.973, 1.0],   // #fbf8ff (base surface)
-        colB: [0.914, 0.867, 1.0],   // #e9ddff (secondary-fixed)
-        colC: [0.886, 0.875, 1.0],   // #e2dfff (primary-fixed)
-        intensity: 0.32,
-        opacity: 0.42
+        base: [0.953, 0.957, 0.968],      // #F3F4F7 Pearl Base
+        ribbon1: [0.886, 0.902, 0.937],   // #E2E6EF Soft Silver
+        ribbon2: [0.815, 0.839, 0.886],   // #D0D6E2 Muted Lavender Drift
+        highlight: [0.28, 0.32, 0.40]     // Specular diffusion
       },
       dark: {
-        colA: [0.114, 0.122, 0.141], // #1D1F24 Graphite base
-        colB: [0.133, 0.141, 0.165], // #22242A Charcoal surface
-        colC: [0.224, 0.200, 0.302], // #39334D Soft Indigo
-        intensity: 0.48,
-        opacity: 0.45
+        base: [0.075, 0.080, 0.092],      // #131417 Deep Graphite Base
+        ribbon1: [0.110, 0.120, 0.145],   // #1C1E25 Rich Charcoal Ribbon
+        ribbon2: [0.155, 0.175, 0.225],   // #272C39 Subtle Muted Indigo
+        highlight: [0.22, 0.25, 0.34]     // Restrained rim sheen
       }
     };
 
     let activeTheme = document.documentElement.classList.contains("dark") ? "dark" : "light";
-    let currentColA = [...PALETTES[activeTheme].colA];
-    let currentColB = [...PALETTES[activeTheme].colB];
-    let currentColC = [...PALETTES[activeTheme].colC];
-    let currentIntensity = PALETTES[activeTheme].intensity;
+    let curBase = [...PALETTES[activeTheme].base];
+    let curRib1 = [...PALETTES[activeTheme].ribbon1];
+    let curRib2 = [...PALETTES[activeTheme].ribbon2];
+    let curHigh = [...PALETTES[activeTheme].highlight];
 
-    let targetColA = [...currentColA];
-    let targetColB = [...currentColB];
-    let targetColC = [...currentColC];
-    let targetIntensity = currentIntensity;
+    let targetBase = [...curBase];
+    let targetRib1 = [...curRib1];
+    let targetRib2 = [...curRib2];
+    let targetHigh = [...curHigh];
 
     let startTime = performance.now();
-    let lastFrame = 0;
     let isRunning = true;
     let isReducedMotion = false;
     let animFrameId = null;
@@ -142,43 +274,40 @@
     function render(now) {
       if (!isRunning) return;
 
-      // Smooth color transition interpolation
-      const lerpSpeed = 0.08;
+      // Color transition lerping
+      const tLerp = 0.06;
       for (let i = 0; i < 3; i++) {
-        currentColA[i] = lerp(currentColA[i], targetColA[i], lerpSpeed);
-        currentColB[i] = lerp(currentColB[i], targetColB[i], lerpSpeed);
-        currentColC[i] = lerp(currentColC[i], targetColC[i], lerpSpeed);
-      }
-      currentIntensity = lerp(currentIntensity, targetIntensity, lerpSpeed);
-
-      // Throttle to ~30fps for ultra-low power consumption (< 0.1% GPU)
-      if (now - lastFrame > 32) {
-        lastFrame = now;
-        gl.useProgram(program);
-        gl.enableVertexAttribArray(posLocation);
-        gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
-        gl.vertexAttribPointer(posLocation, 2, gl.FLOAT, false, 0, 0);
-
-        gl.uniform2f(resLocation, canvas.width, canvas.height);
-        gl.uniform1f(timeLocation, isReducedMotion ? 0.0 : (now - startTime) * 0.001);
-        gl.uniform3fv(colALocation, currentColA);
-        gl.uniform3fv(colBLocation, currentColB);
-        gl.uniform3fv(colCLocation, currentColC);
-        gl.uniform1f(intensityLocation, currentIntensity);
-
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        if (isReducedMotion) {
-          return;
-        }
+        curBase[i] = lerp(curBase[i], targetBase[i], tLerp);
+        curRib1[i] = lerp(curRib1[i], targetRib1[i], tLerp);
+        curRib2[i] = lerp(curRib2[i], targetRib2[i], tLerp);
+        curHigh[i] = lerp(curHigh[i], targetHigh[i], tLerp);
       }
 
-      animFrameId = requestAnimationFrame(render);
+      gl.useProgram(program);
+      gl.enableVertexAttribArray(posLocation);
+      gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
+      gl.vertexAttribPointer(posLocation, 2, gl.FLOAT, false, 0, 0);
+
+      gl.uniform2f(resLocation, canvas.width, canvas.height);
+      const elapsed = isReducedMotion ? 0.0 : (now - startTime) * 0.001;
+      gl.uniform1f(timeLocation, elapsed);
+      gl.uniform3fv(baseLocation, curBase);
+      gl.uniform3fv(ribbon1Location, curRib1);
+      gl.uniform3fv(ribbon2Location, curRib2);
+      gl.uniform3fv(highlightLocation, curHigh);
+
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+      if (!isReducedMotion) {
+        animFrameId = requestAnimationFrame(render);
+      }
     }
 
     function startLoop() {
-      if (!animFrameId && isRunning) {
+      if (!animFrameId && isRunning && !isReducedMotion) {
         animFrameId = requestAnimationFrame(render);
+      } else if (isReducedMotion) {
+        render(performance.now());
       }
     }
 
@@ -192,7 +321,7 @@
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
         stopLoop();
-      } else if (isRunning) {
+      } else if (isRunning && !isReducedMotion) {
         startLoop();
       }
     });
@@ -200,11 +329,10 @@
     window.__klyptraShader = {
       setTheme: function(theme) {
         const pal = PALETTES[theme] || PALETTES.light;
-        targetColA = [...pal.colA];
-        targetColB = [...pal.colB];
-        targetColC = [...pal.colC];
-        targetIntensity = pal.intensity;
-        canvas.style.opacity = pal.opacity;
+        targetBase = [...pal.base];
+        targetRib1 = [...pal.ribbon1];
+        targetRib2 = [...pal.ribbon2];
+        targetHigh = [...pal.highlight];
         if (!animFrameId && isRunning) {
           startLoop();
         }
@@ -222,21 +350,19 @@
         isReducedMotion = !!reduced;
         if (isReducedMotion) {
           stopLoop();
-          // Render single crisp frame
-          gl.useProgram(program);
-          gl.enableVertexAttribArray(posLocation);
-          gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
-          gl.vertexAttribPointer(posLocation, 2, gl.FLOAT, false, 0, 0);
-          gl.uniform2f(resLocation, canvas.width, canvas.height);
-          gl.uniform1f(timeLocation, 0.0);
-          gl.uniform3fv(colALocation, targetColA);
-          gl.uniform3fv(colBLocation, targetColB);
-          gl.uniform3fv(colCLocation, targetColC);
-          gl.uniform1f(intensityLocation, targetIntensity);
-          gl.drawArrays(gl.TRIANGLES, 0, 6);
+          render(performance.now());
         } else if (isRunning) {
           startLoop();
         }
+      },
+      // Diagnostics hook for tests
+      getFrameState: function() {
+        return {
+          isRunning,
+          isReducedMotion,
+          theme: targetBase[0] < 0.5 ? "dark" : "light",
+          elapsedSeconds: (performance.now() - startTime) * 0.001
+        };
       }
     };
 
@@ -247,15 +373,53 @@
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     let isRunning = true;
+    let animId = null;
+    let t = 0;
+
+    function drawFallback() {
+      if (!isRunning) return;
+      t += 0.02;
+      const isDark = document.documentElement.classList.contains("dark");
+      const w = canvas.width = window.innerWidth;
+      const h = canvas.height = window.innerHeight;
+
+      const grad = ctx.createLinearGradient(
+        w * 0.5 + Math.sin(t) * 100,
+        0,
+        w * 0.5 + Math.cos(t) * 100,
+        h
+      );
+
+      if (isDark) {
+        grad.addColorStop(0, "#131417");
+        grad.addColorStop(0.5, "#1C1E25");
+        grad.addColorStop(1, "#272C39");
+      } else {
+        grad.addColorStop(0, "#F3F4F7");
+        grad.addColorStop(0.5, "#E2E6EF");
+        grad.addColorStop(1, "#D0D6E2");
+      }
+
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+      animId = requestAnimationFrame(drawFallback);
+    }
+
+    drawFallback();
 
     window.__klyptraShader = {
-      setTheme: function(theme) {
-        const bg = (theme === "dark") ? "#1D1F24" : "#fbf8ff";
-        ctx.fillStyle = bg;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      setTheme: function() {},
+      setEnabled: function(e) {
+        isRunning = !!e;
+        canvas.style.display = e ? "block" : "none";
+        if (isRunning && !animId) animId = requestAnimationFrame(drawFallback);
       },
-      setEnabled: function(e) { isRunning = !!e; canvas.style.display = e ? "block" : "none"; },
-      setReducedMotion: function() {}
+      setReducedMotion: function(r) {
+        if (r && animId) { cancelAnimationFrame(animId); animId = null; }
+      },
+      getFrameState: function() {
+        return { isRunning, isReducedMotion: false, fallback: true, elapsedSeconds: t };
+      }
     };
   }
 });

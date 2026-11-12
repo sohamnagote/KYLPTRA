@@ -26,3 +26,4 @@ Thank you for your interest in contributing to KLYPTRA Studio!
 4. **Submitting Changes**:
    - Write clear, concise commit messages following conventional commits (`feat: ...`, `fix: ...`, `docs: ...`).
    - Open a Pull Request targeting `main`. Provide screenshots or recordings demonstrating visual and interactive changes.
+

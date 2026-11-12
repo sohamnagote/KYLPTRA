@@ -1,7 +1,7 @@
 /**
  * KLYPTRA Motion Design Engine
- * Centralized motion coordinator, spring solver, page transitions,
- * micro-interactions, layout animations, modals, and toast notifications.
+ * Centralized motion coordinator, spring physics solver, directional workspace transitions,
+ * cursor-reactive drag-and-drop, tactile micro-interactions, modal transitions, and launch reveal.
  */
 
 (function (root, factory) {
@@ -15,12 +15,19 @@
 
   const { TIMING, SPRINGS, EASING } = Tokens;
 
-  // Local state
+  // Workspace index map for directional physical transition flow
+  const WORKSPACE_ORDER = {
+    'new-project': 0,
+    'clips': 1,
+    'editor': 2,
+    'projects': 3,
+    'settings': 4
+  };
+
   let reducedMotionPreference = false;
   let activePageTransition = false;
-  let toastContainer = null;
+  let currentNavId = 'new-project';
 
-  // Initialize reduced motion detection
   if (typeof window !== 'undefined') {
     const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
     reducedMotionPreference = mql.matches;
@@ -48,31 +55,6 @@
     }
   }
 
-  // ----------------- Analytical Spring to CSS Linear Generator -----------------
-  function generateSpringLinear(springSpec, steps = 30) {
-    const { stiffness, damping, mass } = springSpec;
-    const w0 = Math.sqrt(stiffness / mass);
-    const zeta = damping / (2 * Math.sqrt(stiffness * mass));
-
-    if (zeta >= 1) {
-      // Overdamped / critically damped fallback
-      return EASING.smoothOut;
-    }
-
-    const wd = w0 * Math.sqrt(1 - zeta * zeta);
-    const points = [];
-    const duration = 0.5; // normalized 500ms duration
-
-    for (let i = 0; i <= steps; i++) {
-      const t = (i / steps) * duration;
-      const decay = Math.exp(-zeta * w0 * t);
-      const val = 1 - decay * (Math.cos(wd * t) + (zeta * w0 / wd) * Math.sin(wd * t));
-      points.push(Math.round(val * 1000) / 1000);
-    }
-
-    return `linear(${points.join(', ')})`;
-  }
-
   // ----------------- Sidebar Active Indicator Glider -----------------
   function setupSidebarPill() {
     const nav = document.querySelector('aside nav');
@@ -82,13 +64,14 @@
     if (!pill) {
       pill = document.createElement('div');
       pill.id = 'sidebar-active-pill';
-      pill.className = 'sidebar-active-pill absolute left-space-md right-space-md rounded-xl pointer-events-none z-0';
+      pill.className = 'sidebar-active-pill absolute left-2 right-2 rounded-xl pointer-events-none z-0 bg-slate-200/60 dark:bg-white/10 border border-slate-300/40 dark:border-white/10';
       nav.style.position = 'relative';
       nav.prepend(pill);
     }
   }
 
   function updateSidebarPill(activeNavName) {
+    currentNavId = activeNavName;
     const nav = document.querySelector('aside nav');
     if (!nav) return;
 
@@ -111,9 +94,11 @@
     pill.style.top = `${top}px`;
     pill.style.height = `${height}px`;
 
-    // Ensure icon & label elements inside items have smooth subtle scale
     nav.querySelectorAll('[data-nav]').forEach(item => {
       const isCurrent = item.getAttribute('data-nav') === activeNavName;
+      item.classList.toggle('active', isCurrent);
+      item.classList.toggle('text-on-surface', isCurrent);
+      item.classList.toggle('text-on-surface-variant', !isCurrent);
       const icon = item.querySelector('.material-symbols-outlined');
       if (icon) {
         icon.style.transform = isCurrent ? 'scale(1.08)' : 'scale(1.0)';
@@ -122,7 +107,7 @@
     });
   }
 
-  // ----------------- Global Page Transitions -----------------
+  // ----------------- Directional Natural Workspace Transition -----------------
   function transitionPage(fromViewEl, toViewEl, onComplete) {
     if (!toViewEl) {
       if (onComplete) onComplete();
@@ -137,7 +122,6 @@
     }
 
     if (activePageTransition) {
-      // Clean up previous transition immediately
       if (fromViewEl) fromViewEl.classList.add('hidden');
       toViewEl.classList.remove('hidden');
       if (onComplete) onComplete();
@@ -146,42 +130,49 @@
 
     activePageTransition = true;
 
-    // Phase 1: Smooth Exit of Previous View (120ms)
+    // Determine directional movement based on workspace sequence
+    const fromId = fromViewEl ? fromViewEl.id.replace('view-', '') : '';
+    const toId = toViewEl.id.replace('view-', '');
+    const fromIdx = WORKSPACE_ORDER[fromId] ?? 0;
+    const toIdx = WORKSPACE_ORDER[toId] ?? 0;
+    const isForward = toIdx >= fromIdx;
+    const exitOffset = isForward ? -16 : 16;
+    const enterOffset = isForward ? 20 : -20;
+
+    // Phase 1: Smooth Exit of Previous View (110ms)
     if (fromViewEl && fromViewEl !== toViewEl && !fromViewEl.classList.contains('hidden')) {
-      fromViewEl.style.transition = `opacity ${TIMING.instant}ms ${EASING.standard}, transform ${TIMING.instant}ms ${EASING.standard}`;
+      fromViewEl.style.transition = `opacity 110ms ${EASING.standard}, transform 110ms ${EASING.standard}`;
       fromViewEl.style.opacity = '0';
-      fromViewEl.style.transform = 'translateY(-6px) scale(0.995)';
+      fromViewEl.style.transform = `translateX(${exitOffset}px) scale(0.99)`;
 
       setTimeout(() => {
         fromViewEl.classList.add('hidden');
         fromViewEl.style.transform = '';
         fromViewEl.style.opacity = '';
 
-        // Phase 2: Smooth Entrance of Next View (240ms)
-        executeEntrance(toViewEl, onComplete);
-      }, TIMING.instant);
+        // Phase 2: Smooth Natural Workspace Entry
+        executeEntrance(toViewEl, enterOffset, onComplete);
+      }, 110);
     } else {
-      executeEntrance(toViewEl, onComplete);
+      executeEntrance(toViewEl, enterOffset, onComplete);
     }
   }
 
-  function executeEntrance(viewEl, onComplete) {
+  function executeEntrance(viewEl, enterOffset, onComplete) {
     viewEl.classList.remove('hidden');
     viewEl.style.opacity = '0';
-    viewEl.style.transform = 'translateY(12px) scale(0.992)';
+    viewEl.style.transform = `translateX(${enterOffset}px) scale(0.992)`;
     viewEl.style.transition = 'none';
 
-    // Force reflow
-    void viewEl.offsetHeight;
+    void viewEl.offsetHeight; // Force reflow
 
     viewEl.style.transition = `opacity ${TIMING.standard}ms ${EASING.smoothOut}, transform ${TIMING.panel}ms ${EASING.smoothOut}`;
     viewEl.style.opacity = '1';
-    viewEl.style.transform = 'translateY(0) scale(1)';
+    viewEl.style.transform = 'translateX(0) scale(1)';
 
-    // Stagger immediate interactive children cards or sections
-    const staggerItems = viewEl.querySelectorAll('.apple-card, .motion-stagger-item');
+    const staggerItems = viewEl.querySelectorAll('.apple-card, .liquid-glass-card, .motion-stagger-item');
     if (staggerItems.length > 0 && !isReducedMotion()) {
-      staggerEnter(Array.from(staggerItems).slice(0, 12), 35);
+      staggerEnter(Array.from(staggerItems).slice(0, 10), 30);
     }
 
     setTimeout(() => {
@@ -193,13 +184,12 @@
     }, TIMING.panel);
   }
 
-  // ----------------- Restrained Stagger Coordinator -----------------
-  function staggerEnter(elements, staggerDelay = 40) {
+  function staggerEnter(elements, staggerDelay = 35) {
     if (!elements || elements.length === 0 || isReducedMotion()) return;
 
     elements.forEach((el, idx) => {
       el.style.opacity = '0';
-      el.style.transform = 'translateY(14px)';
+      el.style.transform = 'translateY(12px)';
       el.style.transition = 'none';
 
       setTimeout(() => {
@@ -210,47 +200,69 @@
     });
   }
 
-  // ----------------- Animated Card Removal with Layout Collapse -----------------
-  function animateRemove(element, onRemoved) {
-    if (!element) return;
+  // ----------------- Distinctive Cursor-Reactive Dropzone Interaction -----------------
+  function setupDropzonePhysics(dropzoneEl) {
+    if (!dropzoneEl) return;
 
-    if (isReducedMotion()) {
-      if (onRemoved) onRemoved();
-      return;
-    }
+    let isHovering = false;
+    let isDraggingOver = false;
 
-    // 1. Initial shrink & fade
-    element.style.pointerEvents = 'none';
-    element.style.transition = `opacity ${TIMING.micro}ms ${EASING.standard}, transform ${TIMING.micro}ms ${EASING.springPop}`;
-    element.style.opacity = '0';
-    element.style.transform = 'scale(0.9) translateY(8px)';
+    // 3D Perspective Tilt following cursor
+    dropzoneEl.addEventListener('mousemove', (e) => {
+      if (isReducedMotion() || isDraggingOver) return;
+      const rect = dropzoneEl.getBoundingClientRect();
+      const xRel = (e.clientX - rect.left) / rect.width - 0.5;
+      const yRel = (e.clientY - rect.top) / rect.height - 0.5;
 
-    setTimeout(() => {
-      // 2. Smoothly collapse height and margins to avoid abrupt snap
-      const height = element.offsetHeight;
-      element.style.height = `${height}px`;
-      element.style.overflow = 'hidden';
-      element.style.transition = `height ${TIMING.standard}ms ${EASING.smoothOut}, margin ${TIMING.standard}ms ${EASING.smoothOut}, padding ${TIMING.standard}ms ${EASING.smoothOut}`;
+      dropzoneEl.style.transform = `perspective(900px) rotateX(${-yRel * 6}deg) rotateY(${xRel * 6}deg) scale(1.01)`;
+      dropzoneEl.style.transition = 'transform 80ms ease-out';
+    });
 
-      void element.offsetHeight; // Reflow
+    dropzoneEl.addEventListener('mouseleave', () => {
+      if (isReducedMotion()) return;
+      dropzoneEl.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) scale(1)';
+      dropzoneEl.style.transition = 'transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1)';
+    });
 
-      element.style.height = '0px';
-      element.style.marginTop = '0px';
-      element.style.marginBottom = '0px';
-      element.style.paddingTop = '0px';
-      element.style.paddingBottom = '0px';
+    // File Drag In and Out Physics
+    ['dragenter', 'dragover'].forEach(eventType => {
+      dropzoneEl.addEventListener(eventType, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (isDraggingOver) return;
+        isDraggingOver = true;
+        dropzoneEl.classList.add('dropzone-active-drag');
+        dropzoneEl.style.transform = 'perspective(900px) scale(1.025) translateY(-4px)';
+        dropzoneEl.style.transition = 'transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1)';
+      });
+    });
 
+    ['dragleave', 'dragend'].forEach(eventType => {
+      dropzoneEl.addEventListener(eventType, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        isDraggingOver = false;
+        dropzoneEl.classList.remove('dropzone-active-drag');
+        dropzoneEl.style.transform = 'perspective(900px) scale(1) translateY(0)';
+        dropzoneEl.style.transition = 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1)';
+      });
+    });
+
+    dropzoneEl.addEventListener('drop', (e) => {
+      isDraggingOver = false;
+      dropzoneEl.classList.remove('dropzone-active-drag');
+      // Satisfying physical spring impact on drop
+      dropzoneEl.style.transform = 'scale(0.975)';
       setTimeout(() => {
-        if (onRemoved) onRemoved();
-      }, TIMING.standard);
-    }, TIMING.micro);
+        dropzoneEl.style.transform = 'scale(1)';
+        dropzoneEl.style.transition = 'transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1)';
+      }, 100);
+    });
   }
 
   // ----------------- Modal Transition System -----------------
   function openModal(modalEl) {
     if (!modalEl) return;
-    const dialogBox = modalEl.querySelector('div') || modalEl;
-
     modalEl.classList.remove('hidden');
 
     if (isReducedMotion()) {
@@ -258,23 +270,29 @@
       return;
     }
 
+    const backdrop = modalEl.querySelector('.modal-backdrop') || modalEl;
+    const card = modalEl.querySelector('.modal-card, .liquid-glass-card') || modalEl.firstElementChild;
+
     modalEl.style.opacity = '0';
-    dialogBox.style.opacity = '0';
-    dialogBox.style.transform = 'scale(0.95) translateY(10px)';
+    if (card) {
+      card.style.transform = 'scale(0.94) translateY(12px)';
+      card.style.opacity = '0';
+    }
 
     void modalEl.offsetHeight;
 
-    modalEl.style.transition = `opacity ${TIMING.standard}ms ${EASING.standard}`;
+    modalEl.style.transition = `opacity ${TIMING.standard}ms ${EASING.smoothOut}`;
     modalEl.style.opacity = '1';
 
-    dialogBox.style.transition = `opacity ${TIMING.standard}ms ${EASING.smoothOut}, transform ${TIMING.panel}ms ${EASING.smoothOut}`;
-    dialogBox.style.opacity = '1';
-    dialogBox.style.transform = 'scale(1) translateY(0)';
+    if (card) {
+      card.style.transition = `transform ${TIMING.panel}ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity ${TIMING.standard}ms ${EASING.smoothOut}`;
+      card.style.transform = 'scale(1) translateY(0)';
+      card.style.opacity = '1';
+    }
   }
 
   function closeModal(modalEl, onClosed) {
     if (!modalEl) return;
-    const dialogBox = modalEl.querySelector('div') || modalEl;
 
     if (isReducedMotion()) {
       modalEl.classList.add('hidden');
@@ -282,179 +300,78 @@
       return;
     }
 
-    modalEl.style.transition = `opacity ${TIMING.micro}ms ${EASING.standard}`;
+    const card = modalEl.querySelector('.modal-card, .liquid-glass-card') || modalEl.firstElementChild;
+
+    modalEl.style.transition = `opacity ${TIMING.instant}ms ${EASING.standard}`;
     modalEl.style.opacity = '0';
 
-    dialogBox.style.transition = `opacity ${TIMING.micro}ms ${EASING.standard}, transform ${TIMING.micro}ms ${EASING.standard}`;
-    dialogBox.style.opacity = '0';
-    dialogBox.style.transform = 'scale(0.96) translateY(6px)';
+    if (card) {
+      card.style.transition = `transform ${TIMING.instant}ms ${EASING.standard}`;
+      card.style.transform = 'scale(0.96) translateY(8px)';
+    }
 
     setTimeout(() => {
       modalEl.classList.add('hidden');
       modalEl.style.opacity = '';
-      dialogBox.style.opacity = '';
-      dialogBox.style.transform = '';
-      if (onClosed) onClosed();
-    }, TIMING.micro);
-  }
-
-  // ----------------- Toast Notification System -----------------
-  function getOrCreateToastContainer() {
-    if (toastContainer && document.body.contains(toastContainer)) {
-      return toastContainer;
-    }
-    toastContainer = document.getElementById('klyptra-toast-container');
-    if (!toastContainer) {
-      toastContainer = document.createElement('div');
-      toastContainer.id = 'klyptra-toast-container';
-      toastContainer.className = 'fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none select-none';
-      document.body.appendChild(toastContainer);
-    }
-    return toastContainer;
-  }
-
-  function showToast({ type = 'info', title = '', message = '', duration = 4000 }) {
-    const container = getOrCreateToastContainer();
-    const toast = document.createElement('div');
-    toast.className = `klyptra-toast toast-${type} pointer-events-auto rounded-xl shadow-lg border p-3 flex items-start gap-3 backdrop-blur-md relative overflow-hidden`;
-
-    const iconMap = {
-      success: 'check_circle',
-      error: 'error',
-      warning: 'warning',
-      info: 'info'
-    };
-
-    const iconName = iconMap[type] || 'info';
-
-    toast.innerHTML = `
-      <div class="toast-icon-wrap w-7 h-7 rounded-lg flex items-center justify-center shrink-0">
-        <span class="material-symbols-outlined text-[18px]">${iconName}</span>
-      </div>
-      <div class="flex-1 min-w-0 pr-2">
-        ${title ? `<h4 class="font-title-sm text-xs font-bold leading-tight truncate">${title}</h4>` : ''}
-        <p class="font-body-sm text-[11px] leading-snug mt-0.5 opacity-90">${message}</p>
-      </div>
-      <button class="toast-close-btn w-5 h-5 flex items-center justify-center rounded hover:bg-black/10 dark:hover:bg-white/10 opacity-70 hover:opacity-100 transition-opacity">
-        <span class="material-symbols-outlined text-[14px]">close</span>
-      </button>
-      <div class="toast-progress-bar absolute bottom-0 left-0 right-0 h-[3px]">
-        <div class="toast-progress-fill h-full w-full"></div>
-      </div>
-    `;
-
-    container.appendChild(toast);
-
-    // Initial entrance setup
-    if (!isReducedMotion()) {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateY(16px) scale(0.95)';
-      void toast.offsetHeight;
-      toast.style.transition = `opacity ${TIMING.standard}ms ${EASING.smoothOut}, transform ${TIMING.panel}ms ${EASING.smoothOut}`;
-      toast.style.opacity = '1';
-      toast.style.transform = 'translateY(0) scale(1)';
-    }
-
-    // Timed progress bar animation
-    const progressFill = toast.querySelector('.toast-progress-fill');
-    if (progressFill && duration > 0 && !isReducedMotion()) {
-      progressFill.style.transition = `transform ${duration}ms linear`;
-      progressFill.style.transformOrigin = 'left';
-      progressFill.style.transform = 'scaleX(1)';
-      void progressFill.offsetHeight;
-      progressFill.style.transform = 'scaleX(0)';
-    }
-
-    let dismissTimer = null;
-    const dismiss = () => {
-      if (dismissTimer) clearTimeout(dismissTimer);
-      if (isReducedMotion()) {
-        toast.remove();
-        return;
+      if (card) {
+        card.style.transform = '';
+        card.style.opacity = '';
       }
-      toast.style.transition = `opacity ${TIMING.micro}ms ${EASING.standard}, transform ${TIMING.micro}ms ${EASING.standard}, height ${TIMING.standard}ms ${EASING.smoothOut}`;
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateX(20px) scale(0.95)';
-      setTimeout(() => {
-        toast.style.height = `${toast.offsetHeight}px`;
-        void toast.offsetHeight;
-        toast.style.height = '0px';
-        toast.style.marginTop = '0px';
-        toast.style.marginBottom = '0px';
-        toast.style.paddingTop = '0px';
-        toast.style.paddingBottom = '0px';
-        setTimeout(() => toast.remove(), TIMING.standard);
-      }, TIMING.micro);
-    };
-
-    toast.querySelector('.toast-close-btn').addEventListener('click', dismiss);
-    if (duration > 0) {
-      dismissTimer = setTimeout(dismiss, duration);
-    }
-
-    return toast;
+      if (onClosed) onClosed();
+    }, TIMING.instant);
   }
 
-  // ----------------- Micro-Interactions Setup -----------------
-  function initMicroInteractions(root = document) {
-    // 1. Apple-Style Button Physical Press Physics
-    const buttons = root.querySelectorAll('button:not([data-motion-bound]), .apple-btn:not([data-motion-bound])');
-    buttons.forEach(btn => {
-      btn.setAttribute('data-motion-bound', 'true');
-      btn.addEventListener('mousedown', () => {
-        if (!isReducedMotion() && !btn.disabled) {
-          btn.style.transform = 'scale(0.975)';
-          btn.style.transition = `transform ${TIMING.instant}ms ${EASING.smoothOut}`;
-        }
-      });
-      btn.addEventListener('mouseup', () => {
-        if (!isReducedMotion()) {
-          btn.style.transform = '';
-          btn.style.transition = `transform ${TIMING.micro}ms ${EASING.smoothOut}`;
-        }
-      });
-      btn.addEventListener('mouseleave', () => {
-        if (!isReducedMotion()) {
-          btn.style.transform = '';
-          btn.style.transition = `transform ${TIMING.micro}ms ${EASING.smoothOut}`;
-        }
-      });
-    });
+  // ----------------- Launch Opening Sequence -----------------
+  function playLaunchReveal() {
+    const splash = document.getElementById('klyptra-launch-splash');
+    if (!splash) return;
 
-    // 2. Interactive Card Elevation & Scale Response
-    const cards = root.querySelectorAll('.apple-card:not([data-motion-bound])');
-    cards.forEach(card => {
-      card.setAttribute('data-motion-bound', 'true');
-      card.addEventListener('mouseenter', () => {
-        if (!isReducedMotion()) {
-          card.style.transform = 'translateY(-3px) scale(1.008)';
-          card.style.transition = `transform ${TIMING.micro}ms ${EASING.smoothOut}, box-shadow ${TIMING.micro}ms ${EASING.smoothOut}, border-color ${TIMING.micro}ms ease`;
-        }
-      });
-      card.addEventListener('mouseleave', () => {
-        if (!isReducedMotion()) {
-          card.style.transform = '';
-          card.style.transition = `transform ${TIMING.standard}ms ${EASING.smoothOut}, box-shadow ${TIMING.standard}ms ${EASING.smoothOut}, border-color ${TIMING.standard}ms ease`;
-        }
-      });
-    });
+    if (isReducedMotion()) {
+      splash.style.display = 'none';
+      return;
+    }
+
+    const mark = splash.querySelector('.splash-mark');
+    const wordmark = splash.querySelector('.splash-wordmark');
+
+    if (mark) {
+      mark.style.transform = 'scale(0.85) rotate(-6deg)';
+      mark.style.opacity = '0';
+      void mark.offsetHeight;
+      mark.style.transition = 'transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 400ms ease';
+      mark.style.transform = 'scale(1) rotate(0deg)';
+      mark.style.opacity = '1';
+    }
+
+    if (wordmark) {
+      wordmark.style.opacity = '0';
+      wordmark.style.letterSpacing = '6px';
+      setTimeout(() => {
+        wordmark.style.transition = 'letter-spacing 500ms cubic-bezier(0.22, 1, 0.36, 1), opacity 400ms ease';
+        wordmark.style.letterSpacing = '3px';
+        wordmark.style.opacity = '1';
+      }, 150);
+    }
+
+    // Seamless fade away to reveal studio
+    setTimeout(() => {
+      splash.style.transition = 'opacity 350ms cubic-bezier(0.2, 0, 0, 1)';
+      splash.style.opacity = '0';
+      setTimeout(() => {
+        splash.style.display = 'none';
+      }, 350);
+    }, 750);
   }
 
   return {
-    TIMING,
-    SPRINGS,
-    EASING,
     isReducedMotion,
     setReducedMotion,
-    transitionPage,
     updateSidebarPill,
+    transitionPage,
     staggerEnter,
-    animateRemove,
+    setupDropzonePhysics,
     openModal,
     closeModal,
-    showToast,
-    initMicroInteractions,
-    generateSpringLinear
+    playLaunchReveal
   };
 });
-

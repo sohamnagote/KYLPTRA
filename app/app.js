@@ -254,24 +254,26 @@ function setupUploadArea() {
   const fileInput = document.getElementById("fileInput");
 
   if (dropzone && fileInput) {
-    dropzone.addEventListener("click", () => fileInput.click());
+    if (window.KlyptraMotionEngine && typeof window.KlyptraMotionEngine.setupDropzonePhysics === "function") {
+      window.KlyptraMotionEngine.setupDropzonePhysics(dropzone);
+    }
 
-    dropzone.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      dropzone.style.borderColor = "#493ee5";
-      dropzone.style.backgroundColor = "#f4f2fd";
-    });
-
-    dropzone.addEventListener("dragleave", () => {
-      dropzone.style.borderColor = "#c7c4d8";
-      dropzone.style.backgroundColor = "#ffffff";
+    dropzone.addEventListener("click", async () => {
+      if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.select_video_file === "function") {
+        const filePath = await window.pywebview.api.select_video_file();
+        if (filePath) {
+          // Native local file path ingestion
+          const fakeFile = { name: filePath.split(/[/\\]/).pop(), path: filePath, size: 0 };
+          handleNativeLocalVideoPath(filePath);
+          return;
+        }
+      }
+      fileInput.click();
     });
 
     dropzone.addEventListener("drop", (e) => {
       e.preventDefault();
-      dropzone.style.borderColor = "#c7c4d8";
-      dropzone.style.backgroundColor = "#ffffff";
-      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
         handleSelectedVideo(e.dataTransfer.files[0]);
       }
     });

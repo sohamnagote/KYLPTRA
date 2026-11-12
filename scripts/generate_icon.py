@@ -100,3 +100,4 @@ def create_klyptra_icon(output_dir="build"):
 
 if __name__ == "__main__":
     create_klyptra_icon()
+

@@ -66,3 +66,4 @@ Because KLYPTRA bundles a Python CTranslate2 binary compiled via PyInstaller, th
 
 ### Port Conflicts
 By default, KLYPTRA binds its internal API service to `127.0.0.1:8000`. If port 8000 is occupied by another local service, KLYPTRA automatically detects the collision and dynamically binds to the next available ephemeral port.
+

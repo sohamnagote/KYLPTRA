@@ -90,3 +90,4 @@ All AI inferencing and video processing execute 100% locally on your machine—n
 ## License
 
 KLYPTRA Studio is distributed under the proprietary and commercial software license. All rights reserved.
+

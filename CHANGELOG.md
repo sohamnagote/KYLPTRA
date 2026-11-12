@@ -26,3 +26,4 @@ All notable changes to KLYPTRA Studio are documented in this file.
   - Electron Builder configuration for Windows NSIS Installer (`.exe`) and portable zip (`.zip`).
   - Bundled standalone FFmpeg and FFprobe binaries.
 - **Automated Testing Suite**: 31 comprehensive backend tests covering hardware detection, SQLite operations, audio processing, FFmpeg integration, and task queuing.
+

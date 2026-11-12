@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22252C"/>
+      <stop offset="100%" stop-color="#14161A"/>
+    </linearGradient>
+    <linearGradient id="stemGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#CBD5E1"/>
+    </linearGradient>
+    <linearGradient id="upperArmGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+    <linearGradient id="lowerArmGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E2E8F0"/>
+      <stop offset="100%" stop-color="#94A3B8"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle Base Container -->
+  <rect x="32" y="32" width="448" height="448" rx="104" fill="url(#bgGrad)" stroke="rgba(255,255,255,0.12)" stroke-width="3"/>
+  <rect x="35" y="35" width="442" height="442" rx="101" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+  <!-- Left Vertical Stem (Timeline Playhead Pillar) -->
+  <rect x="144" y="128" width="56" height="256" rx="16" fill="url(#stemGrad)"/>
+  
+  <!-- Precision Cut Indicator Notch on Stem -->
+  <rect x="194" y="244" width="6" height="24" rx="3" fill="url(#accentGrad)"/>
+
+  <!-- Upper Diagonal Arm (Precision Cutting Blade) -->
+  <path d="M 236 244 L 328 152 C 336 144 348 144 356 152 L 364 160 C 372 168 372 180 364 188 L 292 260 C 286 266 278 266 272 260 Z" fill="url(#upperArmGrad)"/>
+
+  <!-- Precision Edit Negative Gap Notch & Accent Blade -->
+  <polygon points="304,136 320,120 336,136 320,152" fill="url(#accentGrad)"/>
+
+  <!-- Lower Diagonal Arm (Timeline Playback Track) -->
+  <path d="M 236 268 L 328 360 C 336 368 348 368 356 360 L 364 352 C 372 344 372 332 364 324 L 292 252 C 286 246 278 246 272 252 Z" fill="url(#lowerArmGrad)"/>
+</svg>

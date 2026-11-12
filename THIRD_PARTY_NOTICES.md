@@ -43,3 +43,4 @@ KLYPTRA Studio incorporates open-source software packages subject to the followi
 - **License**: MIT License
 - **Copyright**: (c) 2020 Phosphor Icons
 - **Project**: https://phosphoricons.com
+

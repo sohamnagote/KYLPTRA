@@ -25,3 +25,4 @@ If you discover a security vulnerability in KLYPTRA Studio:
    - Steps or proof-of-concept script to reproduce.
    - The version of KLYPTRA and operating system.
 4. You will receive an acknowledgment within 48 hours and regular updates until resolution.
+

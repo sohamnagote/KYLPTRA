@@ -65,3 +65,4 @@ jobs:
           path: |
             dist/*.exe
             dist/*.zip
+
