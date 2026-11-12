@@ -1,0 +1,67 @@
+name: KLYPTRA Build & Test
+
+on:
+  push:
+    branches: [ main, "release/**" ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-and-package:
+    name: Build & Test on Windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install FFmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install pytest pyinstaller pillow
+
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: Run Backend Pytest Suite
+        run: python -m pytest backend/tests/ -v
+
+      - name: Generate App Icons
+        run: python scripts/generate_icon.py
+
+      - name: Compile Backend Sidecar
+        run: |
+          python -m PyInstaller --noconfirm --onedir --windowed --name klyptra-backend --add-data "backend;backend" --add-data "index.html;." --add-data "app;app" --hidden-import uvicorn --hidden-import fastapi --hidden-import ctranslate2 --hidden-import faster_whisper --hidden-import yt_dlp backend_entry.py
+          mkdir -p resources/backend
+          xcopy /E /I /Y dist\klyptra-backend resources\backend
+
+      - name: Bundle Windows Installer
+        run: npx electron-builder --win nsis zip --x64
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: KLYPTRA-Windows-Dist
+          path: |
+            dist/*.exe
+            dist/*.zip

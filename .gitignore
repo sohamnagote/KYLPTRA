@@ -1,0 +1,54 @@
+# Operating System
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+!build/icon.ico
+!build/icon.png
+*.spec
+
+# Pytest / Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / Electron
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+out/
+release/
+
+# KLYPTRA Runtime / User Data
+*.db
+*.sqlite
+*.sqlite3
+*.log
+logs/
+exports/
+cache/
+models/
+projects/
+resources/backend/
+resources/bin/*.exe
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key

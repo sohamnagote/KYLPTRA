@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>KLYPTRA Studio | AI Video Clipping</title>
+  
+  <!-- Fonts & Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+
+  <!-- Tailwind CSS & Dynamic CSS Design Tokens -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "var(--primary)",
+            "primary-container": "var(--primary-container)",
+            "primary-fixed": "var(--primary-fixed)",
+            "on-primary-fixed-variant": "var(--on-primary-fixed-variant)",
+            "secondary": "var(--secondary)",
+            "secondary-container": "var(--secondary-container)",
+            "secondary-fixed": "var(--secondary-fixed)",
+            "surface": "var(--app-bg)",
+            "surface-container-lowest": "var(--surface-primary)",
+            "surface-container-low": "var(--surface-secondary)",
+            "surface-container": "var(--surface-elevated)",
+            "surface-container-high": "var(--surface-high)",
+            "surface-container-highest": "var(--surface-highest)",
+            "on-surface": "var(--text-primary)",
+            "on-surface-variant": "var(--text-secondary)",
+            "outline": "var(--text-muted)",
+            "outline-variant": "var(--border-default)",
+            "error": "var(--error)",
+            "error-container": "var(--error-container)",
+          },
+          fontFamily: {
+            "title-sm": ["Inter", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "code-sm": ["JetBrains Mono", "monospace"]
+          },
+          spacing: {
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "space-md": "0.75rem",
+            "space-lg": "1.25rem",
+            "space-xl": "2rem",
+            "gutter-desktop": "1.5rem"
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Centralized CSS Variable Tokens for Light Mode and Dark Graphite Mode */
+    :root {
+      --app-bg: #fbf8ff;
+      --sidebar-bg: #ffffff;
+      --surface-primary: #ffffff;
+      --surface-secondary: #f4f2fd;
+      --surface-elevated: #eeedf7;
+      --surface-high: #e8e7f1;
+      --surface-highest: #e3e1ec;
+      --input-bg: #f4f2fd;
+      --border-default: #c7c4d8;
+      --border-subtle: rgba(199, 196, 216, 0.4);
+      --text-primary: #1a1b22;
+      --text-secondary: #464555;
+      --text-muted: #777587;
+      --primary: #493ee5;
+      --primary-container: #635bff;
+      --primary-fixed: #e2dfff;
+      --on-primary-fixed-variant: #321ed2;
+      --secondary: #6b38d4;
+      --secondary-container: #8455ef;
+      --secondary-fixed: #e9ddff;
+      --accent-hover: #3c32cc;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --error: #ba1a1a;
+      --error-container: #ffdad6;
+      --card-shadow: 0 4px 20px -2px rgba(73, 62, 229, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+      --card-shadow-hover: 0 12px 30px -4px rgba(73, 62, 229, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.06);
+    }
+
+    html.dark {
+      --app-bg: #1D1F24;
+      --sidebar-bg: #22242A;
+      --surface-primary: #282A30;
+      --surface-secondary: #2D3037;
+      --surface-elevated: #343740;
+      --surface-high: #343740;
+      --surface-highest: #3e424c;
+      --input-bg: #25272D;
+      --border-default: #3B3E47;
+      --border-subtle: rgba(59, 62, 71, 0.65);
+      --text-primary: #F3F3F5;
+      --text-secondary: #B8BBC5;
+      --text-muted: #9297A3;
+      --primary: #A796FF;
+      --primary-container: #8455ef;
+      --primary-fixed: #39334D;
+      --on-primary-fixed-variant: #F3F3F5;
+      --secondary: #8455ef;
+      --secondary-container: #9d7df2;
+      --secondary-fixed: #39334D;
+      --accent-hover: #B8AAFF;
+      --success: #67C99A;
+      --warning: #E8BB70;
+      --error: #EA858A;
+      --error-container: #5c2024;
+      --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45), 0 2px 6px -1px rgba(0, 0, 0, 0.3);
+      --card-shadow-hover: 0 14px 34px -4px rgba(0, 0, 0, 0.65), 0 6px 12px -2px rgba(167, 150, 255, 0.15);
+    }
+
+    /* Apple Liquid Glass Material System (Thoughtful, High-Contrast Translucency) */
+    .liquid-glass-sidebar {
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(24px) saturate(165%);
+      -webkit-backdrop-filter: blur(24px) saturate(165%);
+      border-right: 1px solid rgba(199, 196, 216, 0.42);
+      box-shadow: 4px 0 24px rgba(26, 27, 34, 0.03);
+    }
+    html.dark .liquid-glass-sidebar {
+      background: rgba(34, 36, 42, 0.78);
+      border-right: 1px solid rgba(255, 255, 255, 0.07);
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.28);
+    }
+
+    .liquid-glass-header {
+      background: rgba(251, 248, 255, 0.74);
+      backdrop-filter: blur(22px) saturate(160%);
+      -webkit-backdrop-filter: blur(22px) saturate(160%);
+      border-bottom: 1px solid rgba(199, 196, 216, 0.35);
+    }
+    html.dark .liquid-glass-header {
+      background: rgba(29, 31, 36, 0.76);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .liquid-glass-card {
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(18px) saturate(145%);
+      -webkit-backdrop-filter: blur(18px) saturate(145%);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 8px 30px -6px rgba(73, 62, 229, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+    html.dark .liquid-glass-card {
+      background: rgba(40, 42, 48, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 32px -6px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    /* Collapsible Disclosure Arrow */
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    details[open] .details-chevron { transform: rotate(180deg); }
+    .details-chevron { transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+    /* Seamless 200ms Theme Transition */
+    html.theme-transitioning,
+    html.theme-transitioning *,
+    html.theme-transitioning *:before,
+    html.theme-transitioning *:after {
+      transition: background-color 200ms cubic-bezier(0.2, 0, 0, 1),
+                  border-color 200ms cubic-bezier(0.2, 0, 0, 1),
+                  color 200ms cubic-bezier(0.2, 0, 0, 1),
+                  box-shadow 200ms cubic-bezier(0.2, 0, 0, 1) !important;
+      transition-delay: 0s !important;
+    }
+
+    /* Auto-recolor hardcoded bg-white elements in Dark Mode */
+    html.dark .bg-white {
+      background-color: var(--surface-primary) !important;
+    }
+    html.dark .border-gray-300 {
+      border-color: var(--border-default) !important;
+    }
+
+    @layer base {
+      html, body {
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background-color: var(--app-bg);
+        color: var(--text-primary);
+      }
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: var(--surface-secondary); }
+      ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+    }
+
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .line-clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Centralized Apple-Inspired Motion Tokens & Rules */
+    .view-panel {
+      transition: opacity 220ms cubic-bezier(0.22, 1, 0.36, 1), transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .sidebar-active-pill {
+      background-color: var(--primary-fixed);
+      transition: top 240ms cubic-bezier(0.22, 1, 0.36, 1),
+                  height 200ms cubic-bezier(0.22, 1, 0.36, 1),
+                  opacity 150ms ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .apple-card {
+      transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+                  box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1),
+                  border-color 150ms ease;
+      box-shadow: var(--card-shadow);
+    }
+    .apple-card:hover {
+      transform: translateY(-3px) scale(1.008);
+      box-shadow: var(--card-shadow-hover);
+    }
+
+    .apple-btn {
+      transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
+                  background-color 150ms ease,
+                  box-shadow 150ms ease;
+    }
+    .apple-btn:active {
+      transform: scale(0.975);
+    }
+
+    /* Focus Ring Interaction */
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary) !important;
+      box-shadow: 0 0 0 3px rgba(73, 62, 229, 0.15) !important;
+      outline: none !important;
+    }
+    html.dark input:focus, html.dark select:focus, html.dark textarea:focus {
+      box-shadow: 0 0 0 3px rgba(167, 150, 255, 0.22) !important;
+    }
+
+    /* Toast Notification Themes */
+    .klyptra-toast {
+      background-color: var(--surface-primary);
+      border-color: var(--border-default);
+      color: var(--text-primary);
+    }
+    .toast-success .toast-icon-wrap { background-color: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .toast-success .toast-progress-fill { background-color: var(--success); }
+    .toast-error .toast-icon-wrap { background-color: rgba(234, 133, 138, 0.2); color: var(--error); }
+    .toast-progress-fill { background-color: var(--error); }
+    .toast-info .toast-icon-wrap { background-color: rgba(73, 62, 229, 0.15); color: var(--primary); }
+    .toast-info .toast-progress-fill { background-color: var(--primary); }
+    .toast-warning .toast-icon-wrap { background-color: rgba(245, 158, 11, 0.18); color: var(--warning); }
+    .toast-warning .toast-progress-fill { background-color: var(--warning); }
+
+    /* 15 Caption Live Animation Keyframes */
+    @keyframes captionFade {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    .animate-caption-fade {
+      animation: captionFade 0.24s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes captionPop {
+      0% { opacity: 0; transform: scale(0.65); }
+      65% { transform: scale(1.08); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .animate-caption-pop {
+      animation: captionPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes captionSlideUp {
+      0% { opacity: 0; transform: translateY(18px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-caption-slide-up {
+      animation: captionSlideUp 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes captionSlideDown {
+      0% { opacity: 0; transform: translateY(-18px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-caption-slide-down {
+      animation: captionSlideDown 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes captionWordReveal {
+      0% { opacity: 0; transform: translateY(8px) scale(0.96); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .animate-caption-word-reveal {
+      animation: captionWordReveal 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes highlightSweep {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .caption-highlight-sweep {
+      background: linear-gradient(90deg, currentColor 0%, var(--highlight-col, #A796FF) 50%, currentColor 100%);
+      background-size: 200% 100%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: highlightSweep 2.2s infinite ease-in-out;
+    }
+
+    @keyframes captionBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .animate-caption-bounce {
+      animation: captionBounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes captionZoom {
+      0% { opacity: 0; transform: scale(0.88); }
+      100% { opacity: 1; transform: scale(1.0); }
+    }
+    .animate-caption-zoom {
+      animation: captionZoom 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes captionChar {
+      0% { opacity: 0; transform: translateY(6px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-caption-char {
+      animation: captionChar 0.18s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes gradientFlow {
+      0% { filter: hue-rotate(0deg); }
+      100% { filter: hue-rotate(360deg); }
+    }
+    .caption-gradient-flow {
+      background: linear-gradient(135deg, var(--col-a, #FFFFFF) 0%, var(--col-b, #A796FF) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientFlow 4s infinite linear;
+    }
+
+    @keyframes captionElastic {
+      0% { opacity: 0; transform: scale(0.4); }
+      55% { transform: scale(1.22); }
+      75% { transform: scale(0.94); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .animate-caption-elastic {
+      animation: captionElastic 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes captionMinimalFade {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    .animate-caption-minimal-fade {
+      animation: captionMinimalFade 0.12s linear forwards;
+    }
+
+    @keyframes strokeDraw {
+      to { stroke-dashoffset: 0; }
+    }
+    .animate-draw-check {
+      stroke-dasharray: 24;
+      stroke-dashoffset: 24;
+      animation: strokeDraw 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .view-panel, .apple-card, .apple-btn, .sidebar-active-pill {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+      }
+    }
+    html.reduced-motion *,
+    html.reduced-motion *:before,
+    html.reduced-motion *:after {
+      animation: none !important;
+      transition-duration: 0.001s !important;
+    }
+  </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface antialiased min-h-screen relative">
+
+  <!-- GPU-Efficient Ambient Background Shader Canvas -->
+  <canvas id="bg-shader" class="fixed inset-0 w-full h-full pointer-events-none z-0 opacity-40"></canvas>
+
+  <!-- Left Navigation Sidebar (Compact Liquid Glass) -->
+  <aside class="fixed left-0 top-0 h-full w-16 md:w-56 xl:w-60 liquid-glass-sidebar z-50 flex flex-col justify-between transition-all duration-200">
+    <div class="flex flex-col flex-1 min-h-0">
+      
+      <!-- Logo Branding -->
+      <div class="h-14 px-3 md:px-5 flex items-center justify-center md:justify-start gap-2.5 border-b border-outline-variant/20">
+        <div class="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-white shadow-sm shrink-0">
+          <span class="material-symbols-outlined text-[19px]">movie_filter</span>
+        </div>
+        <span class="hidden md:inline font-headline-md text-lg text-on-surface tracking-tight font-bold">KLYPTRA</span>
+      </div>
+
+      <!-- Action Button -->
+      <div class="px-2 md:px-3 py-3">
+        <button data-nav="new-project" class="apple-btn flex items-center justify-center gap-1.5 w-full py-2 px-2 md:px-3 rounded-xl bg-primary text-white hover:bg-primary-container transition-all shadow-sm font-title-sm text-xs font-semibold" title="New Project">
+          <span class="material-symbols-outlined text-[18px]">add</span>
+          <span class="hidden md:inline">New Project</span>
+        </button>
+      </div>
+
+      <!-- Main Navigation Links -->
+      <nav class="flex-1 overflow-y-auto px-2 md:px-3 py-1 flex flex-col gap-1 relative">
+        <a data-nav="new-project" href="#" class="relative z-10 flex items-center justify-center md:justify-start gap-3 px-2.5 md:px-3.5 py-2 rounded-xl transition-colors font-title-sm text-xs active" title="Import Video">
+          <span class="material-symbols-outlined text-[20px]">upload_file</span>
+          <span class="hidden md:inline truncate">Import Video</span>
+        </a>
+        <a data-nav="clips" href="#" class="relative z-10 flex items-center justify-center md:justify-start gap-3 px-2.5 md:px-3.5 py-2 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors font-title-sm text-xs" title="Generated Clips">
+          <span class="material-symbols-outlined text-[20px]">auto_awesome</span>
+          <span class="hidden md:inline truncate">Generated Clips</span>
+        </a>
+        <a data-nav="editor" href="#" class="relative z-10 flex items-center justify-center md:justify-start gap-3 px-2.5 md:px-3.5 py-2 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors font-title-sm text-xs" title="Clip Editor">
+          <span class="material-symbols-outlined text-[20px]">movie_edit</span>
+          <span class="hidden md:inline truncate">Clip Editor</span>
+        </a>
+        <a data-nav="projects" href="#" class="relative z-10 flex items-center justify-center md:justify-start gap-3 px-2.5 md:px-3.5 py-2 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors font-title-sm text-xs" title="My Projects">
+          <span class="material-symbols-outlined text-[20px]">folder_open</span>
+          <span class="hidden md:inline truncate">My Projects</span>
+        </a>
+        <a data-nav="settings" href="#" class="relative z-10 flex items-center justify-center md:justify-start gap-3 px-2.5 md:px-3.5 py-2 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors font-title-sm text-xs" title="Settings & Exports">
+          <span class="material-symbols-outlined text-[20px]">settings</span>
+          <span class="hidden md:inline truncate">Settings & Exports</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Compact Local Status Pill -->
+    <div class="hidden md:flex p-3 border-t border-outline-variant/20 items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+      <span class="font-title-sm text-[11px] text-on-surface-variant truncate">Offline Ready • Local AI</span>
+    </div>
+  </aside>
+
+  <!-- Top App Header -->
+  <div class="pl-16 md:pl-56 xl:pl-60 min-h-screen flex flex-col relative z-10 transition-all duration-200">
+    <header class="fixed top-0 left-16 md:left-56 xl:left-60 right-0 h-14 liquid-glass-header z-40 flex items-center justify-between px-4 md:px-6 transition-all duration-200">
+      <div class="flex items-center gap-2 min-w-0">
+        <span id="header-page-title" class="font-headline-md text-sm md:text-base text-on-surface tracking-tight font-semibold truncate">Import Video</span>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <!-- Apple-Style Theme Switcher Segmented Control -->
+        <div class="flex items-center p-0.5 rounded-xl bg-surface-container-low/80 border border-outline-variant/30">
+          <button data-theme-choice="light" onclick="KlyptraTheme.setMode('light')" class="apple-btn px-2 py-1 rounded-lg text-xs font-title-sm flex items-center gap-1 transition-all" title="Light Theme">
+            <span class="material-symbols-outlined text-[15px]">light_mode</span>
+            <span class="hidden lg:inline text-[11px]">Light</span>
+          </button>
+          <button data-theme-choice="dark" onclick="KlyptraTheme.setMode('dark')" class="apple-btn px-2 py-1 rounded-lg text-xs font-title-sm flex items-center gap-1 transition-all" title="Dark Graphite Theme">
+            <span class="material-symbols-outlined text-[15px]">dark_mode</span>
+            <span class="hidden lg:inline text-[11px]">Dark</span>
+          </button>
+          <button data-theme-choice="system" onclick="KlyptraTheme.setMode('system')" class="apple-btn px-2 py-1 rounded-lg text-xs font-title-sm flex items-center gap-1 transition-all" title="System Theme">
+            <span class="material-symbols-outlined text-[15px]">desktop_windows</span>
+            <span class="hidden lg:inline text-[11px]">Auto</span>
+          </button>
+        </div>
+
+        <button onclick="switchView('settings')" class="apple-btn w-8 h-8 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors" title="Settings & Exports">
+          <span class="material-symbols-outlined text-[19px]">tune</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Viewport Container -->
+    <main class="flex-1 w-full pt-18 md:pt-20 px-4 md:px-6 pb-8 max-w-full overflow-x-hidden">
+
+      <!-- ================= VIEW 1: NEW PROJECT / UPLOAD ================= -->
+      <section id="view-new-project" class="view-panel w-full max-w-4xl mx-auto flex flex-col pt-2">
+        <!-- Concise Header -->
+        <div class="flex flex-col items-center text-center px-2 mb-5">
+          <h1 class="font-display-lg text-2xl md:text-3xl font-bold text-on-surface tracking-tight">
+            Create Clips Locally
+          </h1>
+          <p class="font-body-lg text-xs md:text-sm text-on-surface-variant max-w-md mt-1">
+            Import a video or supported URL to extract vertical clips on your PC.
+          </p>
+        </div>
+
+        <!-- Import Mode Tabs Switcher -->
+        <div class="flex items-center justify-center mb-5">
+          <div class="inline-flex p-1 bg-surface-container-low/80 backdrop-blur-md rounded-xl border border-outline-variant/30">
+            <button id="tab-btn-pc" class="apple-btn px-4 py-1.5 rounded-lg font-title-sm text-xs font-semibold transition-all bg-white text-on-surface shadow-xs flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[16px] text-primary">computer</span>
+              <span>Local Video</span>
+            </button>
+            <button id="tab-btn-yt" class="apple-btn px-4 py-1.5 rounded-lg font-title-sm text-xs font-semibold transition-all text-on-surface-variant hover:text-on-surface flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[16px] text-error">smart_display</span>
+              <span>YouTube URL</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- TAB CONTENT A: Local PC Upload Dropzone -->
+        <div id="tab-content-pc" class="w-full mb-5">
+          <div id="dropzone" class="liquid-glass-card relative w-full rounded-2xl p-6 md:p-10 flex flex-col items-center justify-center text-center transition-all duration-200 cursor-pointer overflow-hidden group min-h-[260px] border-2 border-dashed border-outline-variant/70 hover:border-primary">
+            
+            <input accept="video/mp4,video/quicktime,video/x-matroska,video/webm,video/x-msvideo" class="hidden" id="fileInput" type="file"/>
+            
+            <div class="relative w-14 h-14 rounded-2xl bg-primary-fixed/60 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-200">
+              <span class="material-symbols-outlined text-[28px] text-primary">cloud_upload</span>
+            </div>
+
+            <h2 class="font-headline-lg text-lg md:text-xl font-bold text-on-surface mb-1">
+              Drop a Video Here
+            </h2>
+            <p class="font-body-md text-xs text-on-surface-variant max-w-sm mb-5">
+              MP4, MOV, MKV, or WEBM. Processed offline on your device.
+            </p>
+
+            <button type="button" class="apple-btn flex items-center gap-1.5 px-5 py-2 rounded-xl bg-primary text-white hover:bg-primary-container transition-all shadow-sm font-title-sm text-xs font-semibold">
+              <span class="material-symbols-outlined text-[17px]">folder_open</span>
+              <span>Choose File</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- TAB CONTENT B: YouTube URL Downloader -->
+        <div id="tab-content-yt" class="w-full mb-5 hidden">
+          <div class="liquid-glass-card w-full rounded-2xl p-6 flex flex-col">
+            <h2 class="font-headline-lg text-base font-bold text-on-surface mb-1 flex items-center gap-2">
+              <span class="material-symbols-outlined text-error text-[20px]">smart_display</span>
+              <span>Import from YouTube</span>
+            </h2>
+            <p class="font-body-md text-xs text-on-surface-variant mb-4">
+              Paste a public watch, Shorts, or youtu.be link.
+            </p>
+
+            <!-- URL Input Row -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-4">
+              <div class="relative flex-1">
+                <input id="yt-url-input" type="url" placeholder="https://www.youtube.com/watch?v=..." class="w-full bg-surface-container-low border border-outline-variant/40 rounded-xl py-2.5 pl-3 pr-10 text-xs font-title-sm text-on-surface"/>
+                <button id="btn-yt-paste" class="absolute right-2 top-2 p-1 rounded-md text-on-surface-variant hover:text-primary transition-colors text-[11px] font-title-sm flex items-center" title="Paste from Clipboard">
+                  <span class="material-symbols-outlined text-[16px]">content_paste</span>
+                </button>
+              </div>
+
+              <button id="btn-yt-fetch" class="apple-btn py-2.5 px-4 rounded-xl bg-primary text-white hover:bg-primary-container font-title-sm text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-colors shrink-0">
+                <span class="material-symbols-outlined text-[16px]">search</span>
+                <span>Fetch Video</span>
+              </button>
+            </div>
+
+            <!-- YouTube Video Metadata Preview Card (Hidden initially) -->
+            <div id="yt-preview-card" class="hidden flex flex-col sm:flex-row gap-space-md p-space-md rounded-xl bg-surface-container-low border border-outline-variant/30 mb-space-md">
+              <img id="yt-thumb-img" src="" alt="Thumbnail" class="w-full sm:w-48 h-28 object-cover rounded-lg shadow-xs bg-surface-container"/>
+              <div class="flex-1 flex flex-col justify-between min-w-0">
+                <div>
+                  <h3 id="yt-video-title" class="font-headline-md text-sm font-bold text-on-surface line-clamp-2 mb-1">Video Title</h3>
+                  <div class="flex items-center gap-2 text-xs text-on-surface-variant">
+                    <span id="yt-channel-name" class="font-title-sm text-xs font-medium text-on-surface">Channel</span>
+                    <span class="text-outline-variant">•</span>
+                    <span id="yt-duration-badge" class="font-code-sm text-xs bg-surface-container px-2 py-0.5 rounded">0:00</span>
+                  </div>
+                </div>
+
+                <!-- Quality Selection -->
+                <div class="mt-space-sm flex flex-wrap items-center gap-3">
+                  <div class="flex items-center gap-1.5">
+                    <label class="font-title-sm text-[11px] text-on-surface-variant">Quality:</label>
+                    <select id="yt-quality-select" class="bg-white border border-outline-variant/40 rounded-lg py-1 px-2 text-xs font-title-sm">
+                      <option value="1080p" selected>1080p (Recommended)</option>
+                      <option value="720p">720p (Faster Processing)</option>
+                      <option value="best">Best Available</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- User Confirmation Checkbox -->
+            <div id="yt-confirm-row" class="hidden mb-space-md p-3 bg-surface-container-low/60 rounded-xl border border-outline-variant/20 flex items-start gap-2">
+              <input id="yt-auth-check" type="checkbox" class="mt-0.5 accent-primary cursor-pointer"/>
+              <label for="yt-auth-check" class="font-body-sm text-xs text-on-surface-variant cursor-pointer">
+                I confirm that I own this content, have permission to use it, or am authorized to download and edit it.
+              </label>
+            </div>
+
+            <!-- Download Action Button -->
+            <button id="btn-yt-download" class="hidden w-full py-2.5 rounded-xl bg-primary text-white hover:bg-primary-container font-title-sm text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-colors">
+              <span class="material-symbols-outlined text-[18px]">download</span>
+              <span>Download & Import into KLYPTRA</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Video Selected Specs Card (Appears after PC upload or YouTube download) -->
+        <div id="selected-video-meta" class="hidden w-full bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm border border-outline-variant/40 mb-space-lg">
+          <div class="flex items-center justify-between pb-space-md border-b border-outline-variant/20 mb-space-md">
+            <div class="flex items-center gap-space-sm">
+              <span class="material-symbols-outlined text-[24px] text-primary">check_circle</span>
+              <span class="font-headline-md text-lg font-bold text-on-surface" id="meta-filename">video.mp4</span>
+            </div>
+            <button onclick="resetVideoSelection()" class="text-xs text-primary hover:underline font-title-sm">Change Video</button>
+          </div>
+
+          <!-- Metadata Specs Grid -->
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-space-md mb-space-lg">
+            <div class="bg-surface-container-low/70 p-space-sm rounded-lg">
+              <span class="font-code-sm text-[11px] text-on-surface-variant uppercase">Duration</span>
+              <p id="meta-duration" class="font-title-sm text-sm font-bold text-on-surface mt-0.5">0m 0s</p>
+            </div>
+            <div class="bg-surface-container-low/70 p-space-sm rounded-lg">
+              <span class="font-code-sm text-[11px] text-on-surface-variant uppercase">Resolution</span>
+              <p id="meta-resolution" class="font-title-sm text-sm font-bold text-on-surface mt-0.5">1920 × 1080</p>
+            </div>
+            <div class="bg-surface-container-low/70 p-space-sm rounded-lg">
+              <span class="font-code-sm text-[11px] text-on-surface-variant uppercase">Frame Rate</span>
+              <p id="meta-fps" class="font-title-sm text-sm font-bold text-on-surface mt-0.5">30 FPS</p>
+            </div>
+            <div class="bg-surface-container-low/70 p-space-sm rounded-lg">
+              <span class="font-code-sm text-[11px] text-on-surface-variant uppercase">File Size</span>
+              <p id="meta-size" class="font-title-sm text-sm font-bold text-on-surface mt-0.5">0 MB</p>
+            </div>
+            <div class="bg-surface-container-low/70 p-space-sm rounded-lg col-span-2">
+              <span class="font-code-sm text-[11px] text-on-surface-variant uppercase">Audio Stream</span>
+              <p id="meta-audio" class="font-title-sm text-sm font-bold text-on-surface mt-0.5">Stereo / Voice Detected</p>
+            </div>
+          </div>
+
+          <!-- Processing Preference Selector: FAST / BALANCED / ACCURATE -->
+          <div class="mb-space-lg p-space-md bg-surface-container-low rounded-xl">
+            <div class="flex items-center justify-between mb-space-xs">
+              <label class="font-title-sm text-xs font-semibold text-on-surface">Processing Profile</label>
+              <span class="font-code-sm text-[10px] text-on-surface-variant">Reuses cached transcripts automatically</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <button data-profile="fast" class="profile-btn py-2 px-3 rounded-lg border border-outline-variant/30 text-xs font-title-sm flex flex-col items-center bg-white hover:border-primary/50 transition-all">
+                <span class="font-bold text-on-surface">FAST</span>
+                <span class="text-[10px] text-on-surface-variant">Base model • Fast decoding</span>
+              </button>
+              <button data-profile="balanced" class="profile-btn py-2 px-3 rounded-lg border-2 border-primary bg-primary-fixed/40 text-xs font-title-sm flex flex-col items-center transition-all shadow-xs">
+                <span class="font-bold text-primary">BALANCED</span>
+                <span class="text-[10px] text-primary font-medium">Small model • Default</span>
+              </button>
+              <button data-profile="accurate" class="profile-btn py-2 px-3 rounded-lg border border-outline-variant/30 text-xs font-title-sm flex flex-col items-center bg-white hover:border-primary/50 transition-all">
+                <span class="font-bold text-on-surface">ACCURATE</span>
+                <span class="text-[10px] text-on-surface-variant">Medium model • High precision</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Language Selection -->
+          <div class="mb-space-md">
+            <label class="font-title-sm text-xs text-on-surface-variant font-medium block mb-1">Audio Language</label>
+            <select id="select-language" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-xl p-2.5 text-xs font-title-sm focus:border-primary focus:outline-none">
+              <option value="auto" selected>Auto-Detect (English, Hindi, Multilingual)</option>
+              <option value="en">English</option>
+              <option value="hi">Hindi (हिंदी)</option>
+            </select>
+          </div>
+
+          <!-- Custom AI Clipping Natural Language Instruction -->
+          <div class="mb-space-lg">
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-title-sm text-xs text-on-surface-variant font-medium">Custom AI Clipping Instructions (Optional)</label>
+              <span class="text-[10px] text-primary font-code-sm">Local Semantic Matching</span>
+            </div>
+            <input id="custom-ai-instruction-input" type="text" placeholder="e.g. Find the most controversial statements, strong business advice, funny moments..." class="w-full bg-surface-container-low border border-outline-variant/40 rounded-xl p-2.5 text-xs font-title-sm focus:border-primary focus:outline-none"/>
+            <div class="flex flex-wrap gap-1.5 mt-2">
+              <button type="button" class="instruction-chip px-2.5 py-1 rounded-full bg-surface-container-low hover:bg-primary-fixed hover:text-on-primary-fixed-variant text-[11px] font-title-sm text-on-surface-variant transition-colors border border-outline-variant/30" data-inst="Find the most controversial statements">🔥 Controversial</button>
+              <button type="button" class="instruction-chip px-2.5 py-1 rounded-full bg-surface-container-low hover:bg-primary-fixed hover:text-on-primary-fixed-variant text-[11px] font-title-sm text-on-surface-variant transition-colors border border-outline-variant/30" data-inst="Find clips that contain strong business advice">💼 Business Advice</button>
+              <button type="button" class="instruction-chip px-2.5 py-1 rounded-full bg-surface-container-low hover:bg-primary-fixed hover:text-on-primary-fixed-variant text-[11px] font-title-sm text-on-surface-variant transition-colors border border-outline-variant/30" data-inst="Find funny moments and bloopers">😂 Funny Moments</button>
+              <button type="button" class="instruction-chip px-2.5 py-1 rounded-full bg-surface-container-low hover:bg-primary-fixed hover:text-on-primary-fixed-variant text-[11px] font-title-sm text-on-surface-variant transition-colors border border-outline-variant/30" data-inst="Find educational explanations and tutorials">🎓 Educational</button>
+              <button type="button" class="instruction-chip px-2.5 py-1 rounded-full bg-surface-container-low hover:bg-primary-fixed hover:text-on-primary-fixed-variant text-[11px] font-title-sm text-on-surface-variant transition-colors border border-outline-variant/30" data-inst="Find moments with strong opening hooks">🎯 Strong Hooks</button>
+            </div>
+          </div>
+
+          <!-- Start Action Button -->
+          <button id="btn-start-clipping" class="w-full py-3 rounded-xl bg-primary text-white hover:bg-primary-container font-title-sm text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition-all">
+            <span class="material-symbols-outlined text-[20px]">auto_awesome</span>
+            <span>Start AI Speech Analysis & Clip Extraction</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 2: GENERATED CLIPS ================= -->
+      <section id="view-clips" class="view-panel hidden w-full max-w-6xl mx-auto flex flex-col">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-space-md border-b border-outline-variant/20 mb-space-lg gap-space-sm">
+          <div>
+            <h2 class="font-headline-lg text-2xl font-bold text-on-surface">Extracted Clip Candidates</h2>
+            <p class="font-body-md text-xs text-on-surface-variant mt-0.5">Contextually complete moments ranked by content quality and natural boundaries.</p>
+          </div>
+          <div class="flex items-center gap-space-sm flex-wrap">
+            <span id="clips-count-badge" class="px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-code-sm text-xs font-semibold">
+              0 Clips Found
+            </span>
+            <button id="btn-batch-export-all" class="apple-btn px-3 py-1.5 rounded-lg bg-primary hover:bg-primary-container text-white font-title-sm text-xs font-semibold flex items-center gap-1.5 shadow-xs">
+              <span class="material-symbols-outlined text-[16px]">file_download</span>
+              <span>Batch Export All</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Clips Grid -->
+        <div id="clips-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-lg">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="clips-empty-state" class="w-full py-space-xl flex flex-col items-center justify-center text-center">
+          <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant mb-space-md">
+            <span class="material-symbols-outlined text-[32px]">movie</span>
+          </div>
+          <h3 class="font-headline-md text-lg font-semibold text-on-surface mb-1">No Clips Extracted Yet</h3>
+          <p class="font-body-md text-xs text-on-surface-variant max-w-sm mb-space-md">Upload and transcribe a video to identify viral candidate clips.</p>
+          <button data-nav="new-project" class="py-2 px-4 rounded-lg bg-primary text-white font-title-sm text-xs font-medium">Upload Video</button>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 3: CLIP EDITOR ================= -->
+      <section id="view-editor" class="view-panel hidden w-full max-w-6xl mx-auto flex flex-col">
+        <!-- Sub-header Breadcrumb Row -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between py-space-sm mb-space-md gap-2 border-b border-outline-variant/20 pb-space-sm">
+          <div class="flex items-center gap-space-sm flex-wrap">
+            <button onclick="switchView('clips')" class="p-1 rounded-lg hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors">
+              <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+            </button>
+            <span class="font-code-sm text-xs text-on-surface-variant uppercase tracking-wider">SEQUENCE</span>
+            <span class="text-outline-variant font-code-sm">/</span>
+            <span id="editor-clip-title" class="font-headline-md text-base font-bold text-on-surface line-clamp-1">Untitled Sequence</span>
+            <span id="trim-duration-badge" class="ml-space-xs px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-code-sm text-xs font-semibold">0.0s</span>
+          </div>
+
+          <div class="flex items-center gap-space-sm flex-wrap">
+            <!-- Aspect Ratio Switcher: 9:16, 1:1, 4:5, 16:9 -->
+            <div class="flex items-center bg-surface-container-low rounded-lg p-0.5 shadow-xs border border-outline-variant/30">
+              <button data-aspect="9:16" class="px-2.5 py-1 rounded bg-surface-container-lowest text-on-surface font-title-sm text-xs shadow-xs transition-all flex items-center gap-1 border border-primary/40" type="button">
+                <span class="material-symbols-outlined text-[14px] text-primary">stay_current_portrait</span>
+                <span>9:16</span>
+              </button>
+              <button data-aspect="1:1" class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface font-title-sm text-xs transition-colors flex items-center gap-1" type="button">
+                <span class="material-symbols-outlined text-[14px]">crop_square</span>
+                <span>1:1</span>
+              </button>
+              <button data-aspect="4:5" class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface font-title-sm text-xs transition-colors flex items-center gap-1" type="button">
+                <span class="material-symbols-outlined text-[14px]">portrait</span>
+                <span>4:5</span>
+              </button>
+              <button data-aspect="16:9" class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface font-title-sm text-xs transition-colors flex items-center gap-1" type="button">
+                <span class="material-symbols-outlined text-[14px]">aspect_ratio</span>
+                <span>16:9</span>
+              </button>
+            </div>
+
+            <!-- Primary Actions -->
+            <button id="btn-render-preview" class="apple-btn px-space-md py-1.5 rounded-lg bg-surface-container-lowest hover:bg-surface-container-high text-on-surface font-title-sm text-xs shadow-xs border border-outline-variant/30 flex items-center gap-1.5 transition-colors">
+              <span class="material-symbols-outlined text-[16px] text-primary">preview</span>
+              <span>Render Preview</span>
+            </button>
+            <button id="btn-export-final" class="apple-btn px-space-lg py-1.5 rounded-lg bg-primary hover:bg-primary-container text-white font-title-sm text-xs shadow-xs flex items-center gap-1.5 transition-colors">
+              <span class="material-symbols-outlined text-[16px]">ios_share</span>
+              <span>Export Video</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Studio Docked Grid -->
+        <div class="grid grid-cols-12 gap-space-lg items-start">
+          
+          <!-- LEFT: Stage / Preview Canvas & Timeline (Col 1-7) -->
+          <div class="col-span-12 lg:col-span-7 flex flex-col gap-space-md">
+            
+            <!-- Video Player Framing Card -->
+            <div class="w-full bg-surface-container-lowest rounded-2xl shadow-sm p-space-md flex flex-col border border-outline-variant/30">
+              
+              <!-- Video Player Framing Box -->
+              <div id="editor-preview-framing" class="relative rounded-xl bg-surface-container overflow-hidden flex flex-col items-center justify-center select-none shadow-inner mx-auto transition-all duration-300" style="width: 270px; height: 480px;">
+                <video id="editor-video-player" class="w-full h-full object-cover" playsinline controlsList="nodownload"></video>
+                <!-- Live Subtitle Overlay Preview -->
+                <div id="video-caption-overlay" class="absolute bottom-10 left-3 right-3 text-center pointer-events-none transition-all px-2 py-1 rounded" style="color: #FFFFFF; font-size: 15px; font-weight: bold; text-shadow: 0 1px 4px rgba(0,0,0,0.8);">
+                </div>
+              </div>
+
+              <!-- Transport Controls Bar -->
+              <div class="flex items-center justify-between mt-space-md pt-space-sm border-t border-outline-variant/20 px-space-sm">
+                <div class="flex items-center gap-1.5">
+                  <button id="btn-player-step-back" class="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors" title="Step Back 1s">
+                    <span class="material-symbols-outlined text-[18px]">replay_10</span>
+                  </button>
+                  <button id="btn-player-play" class="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary-container transition-colors shadow-xs">
+                    <span class="material-symbols-outlined text-[20px]">play_arrow</span>
+                  </button>
+                  <button id="btn-player-step-fwd" class="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors" title="Step Forward 1s">
+                    <span class="material-symbols-outlined text-[18px]">forward_10</span>
+                  </button>
+                  <span id="player-current-time" class="font-code-sm text-xs text-on-surface-variant ml-1">0.0s / 0.0s</span>
+                </div>
+                
+                <div class="flex items-center gap-space-sm text-xs font-code-sm text-on-surface-variant">
+                  <span id="framing-status-indicator" class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[15px] text-primary">crop_free</span>
+                    <span id="framing-status-text">Face Tracking Active</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Visual Timeline & Waveform Panel -->
+            <div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm border border-outline-variant/30 flex flex-col gap-space-sm">
+              <div class="flex items-center justify-between">
+                <h4 class="font-headline-md text-xs font-bold text-on-surface uppercase tracking-wider">Audio Waveform & Timeline</h4>
+                <div class="flex items-center gap-2">
+                  <button id="btn-timeline-split" class="px-2 py-0.5 rounded text-[11px] font-title-sm bg-surface-container-low hover:bg-surface-container text-on-surface border border-outline-variant/30 flex items-center gap-1" title="Split at Cursor [S]">
+                    <span class="material-symbols-outlined text-[14px]">content_cut</span>
+                    <span>Split [S]</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Canvas Audio Waveform representation -->
+              <div class="relative w-full h-12 bg-surface-container-low rounded-lg overflow-hidden border border-outline-variant/30">
+                <canvas id="waveform-canvas" class="w-full h-full block"></canvas>
+                <!-- Playhead Indicator Line -->
+                <div id="waveform-playhead" class="absolute top-0 bottom-0 w-0.5 bg-primary pointer-events-none transition-all" style="left: 0%;"></div>
+              </div>
+
+              <!-- Interactive Timeline Scrubber Slider -->
+              <div class="pt-1">
+                <input id="timeline-scrubber" type="range" min="0" max="100" value="0" step="0.1" class="w-full accent-primary cursor-pointer"/>
+              </div>
+
+              <!-- Trimming Bounds Inputs -->
+              <div class="grid grid-cols-2 gap-space-md pt-space-xs">
+                <div>
+                  <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">Start Timestamp (sec)</label>
+                  <input id="trim-start" type="number" step="0.1" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg p-2 font-code-sm text-xs text-on-surface focus:border-primary focus:outline-none"/>
+                </div>
+                <div>
+                  <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">End Timestamp (sec)</label>
+                  <input id="trim-end" type="number" step="0.1" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg p-2 font-code-sm text-xs text-on-surface focus:border-primary focus:outline-none"/>
+                </div>
+              </div>
+
+              <!-- Keyboard Shortcuts Helper Strip -->
+              <div class="pt-space-xs border-t border-outline-variant/20 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-code-sm text-on-surface-variant">
+                <span>[Space] Play/Pause</span>
+                <span>•</span>
+                <span>[←/→] ±1s</span>
+                <span>•</span>
+                <span>[I/O] Set Bounds</span>
+                <span>•</span>
+                <span>[S] Split</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT: Studio Dock Tabs Panel (Col 8-12) -->
+          <div class="col-span-12 lg:col-span-5 flex flex-col gap-space-md">
+            
+            <!-- Metadata & Title Card -->
+            <div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm border border-outline-variant/30">
+              <label class="font-title-sm text-xs text-on-surface-variant block mb-1">Sequence Title</label>
+              <input id="editor-input-title" type="text" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg p-2 font-title-sm text-xs text-on-surface focus:border-primary focus:outline-none"/>
+              <!-- AI Suggested Titles quick selector -->
+              <div id="editor-ai-titles-row" class="hidden mt-2 pt-2 border-t border-outline-variant/20">
+                <span class="text-[10px] text-primary font-code-sm uppercase tracking-wider block mb-1">AI Alternative Titles:</span>
+                <div id="editor-ai-titles-list" class="flex flex-col gap-1"></div>
+              </div>
+            </div>
+
+            <!-- Studio Dock Tabs Navigation Bar -->
+            <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden flex flex-col">
+              
+              <!-- Tab Strip Header -->
+              <div class="flex items-center overflow-x-auto border-b border-outline-variant/20 bg-surface-container-low/50 p-1">
+                <button data-studio-tab="captions" class="studio-tab-btn active px-3 py-1.5 rounded-lg text-xs font-title-sm font-semibold transition-all bg-white text-primary shadow-xs flex items-center gap-1 shrink-0">
+                  <span class="material-symbols-outlined text-[15px]">closed_caption</span>
+                  <span>Captions</span>
+                </button>
+                <button data-studio-tab="transcript" class="studio-tab-btn px-3 py-1.5 rounded-lg text-xs font-title-sm font-semibold transition-all text-on-surface-variant hover:text-on-surface flex items-center gap-1 shrink-0">
+                  <span class="material-symbols-outlined text-[15px]">subtitles</span>
+                  <span>Transcript</span>
+                </button>
+                <button data-studio-tab="reframing" class="studio-tab-btn px-3 py-1.5 rounded-lg text-xs font-title-sm font-semibold transition-all text-on-surface-variant hover:text-on-surface flex items-center gap-1 shrink-0">
+                  <span class="material-symbols-outlined text-[15px]">aspect_ratio</span>
+                  <span>Framing</span>
+                </button>
+                <button data-studio-tab="audio" class="studio-tab-btn px-3 py-1.5 rounded-lg text-xs font-title-sm font-semibold transition-all text-on-surface-variant hover:text-on-surface flex items-center gap-1 shrink-0">
+                  <span class="material-symbols-outlined text-[15px]">graphic_eq</span>
+                  <span>Audio & Voice</span>
+                </button>
+                <button data-studio-tab="broll" class="studio-tab-btn px-3 py-1.5 rounded-lg text-xs font-title-sm font-semibold transition-all text-on-surface-variant hover:text-on-surface flex items-center gap-1 shrink-0">
+                  <span class="material-symbols-outlined text-[15px]">layers</span>
+                  <span>B-Roll</span>
+                </button>
+                <button data-studio-tab="brand" class="studio-tab-btn px-3 py-1.5 rounded-lg text-xs font-title-sm font-semibold transition-all text-on-surface-variant hover:text-on-surface flex items-center gap-1 shrink-0">
+                  <span class="material-symbols-outlined text-[15px]">verified</span>
+                  <span>Brand & Export</span>
+                </button>
+              </div>
+
+              <!-- TAB 1: CAPTIONS STUDIO -->
+              <div id="studio-pane-captions" class="studio-pane p-space-md flex flex-col gap-space-sm">
+                
+                <div class="flex items-center justify-between pb-space-xs border-b border-outline-variant/20">
+                  <span class="font-headline-md text-xs font-bold text-on-surface uppercase tracking-wider">Dynamic Subtitle Studio</span>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input id="toggle-captions" type="checkbox" checked class="sr-only peer">
+                    <div class="w-8 h-4 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
+                  </label>
+                </div>
+
+                <!-- 15 Built-in Presets Carousel / Grid -->
+                <div>
+                  <label class="font-title-sm text-xs text-on-surface-variant block mb-1">Built-in Caption Styles (15 Styles)</label>
+                  <div id="caption-presets-carousel" class="grid grid-cols-3 gap-1.5 max-h-36 overflow-y-auto p-1 bg-surface-container-low rounded-lg border border-outline-variant/30">
+                    <!-- Populated dynamically via app.js -->
+                  </div>
+                </div>
+
+                <!-- Animation Selector (14 styles) -->
+                <div>
+                  <label class="font-title-sm text-xs text-on-surface-variant block mb-1">Caption Motion Animation</label>
+                  <select id="caption-animation-select" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg p-2 font-title-sm text-xs">
+                    <option value="Fade" selected>1. Fade (Restrained & Smooth)</option>
+                    <option value="Pop">2. Pop (Dynamic Spring Emphasis)</option>
+                    <option value="Slide Up">3. Slide Up (Smooth Entrance)</option>
+                    <option value="Slide Down">4. Slide Down (Downward Gliding)</option>
+                    <option value="Typewriter">5. Typewriter (Sequential Reveal)</option>
+                    <option value="Karaoke">6. Karaoke (Spoken Word Sweep)</option>
+                    <option value="Word Reveal">7. Word Reveal (Staggered Words)</option>
+                    <option value="Highlight Sweep">8. Highlight Sweep (Glowing Beam)</option>
+                    <option value="Bounce">9. Bounce (Rhythmic Spring)</option>
+                    <option value="Smooth Zoom">10. Smooth Zoom (Cinematic Push)</option>
+                    <option value="Character Reveal">11. Character Reveal (Letter Float)</option>
+                    <option value="Gradient Highlight">12. Gradient Highlight (Flowing Colors)</option>
+                    <option value="Elastic Pop">13. Elastic Pop (Kinetic Bounce)</option>
+                    <option value="Minimal Fade">14. Minimal Fade (Quick Dissolve)</option>
+                    <option value="Split Word Reveal">15. Split Word Reveal (Multi-Directional)</option>
+                  </select>
+                </div>
+
+                <!-- Subtitle Text -->
+                <div>
+                  <label class="font-title-sm text-xs text-on-surface-variant block mb-1">Subtitle Text</label>
+                  <textarea id="caption-text-area" rows="2" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg p-2 font-body-sm text-xs text-on-surface focus:border-primary focus:outline-none"></textarea>
+                </div>
+
+                <!-- Font & Position -->
+                <div class="grid grid-cols-2 gap-space-sm">
+                  <div>
+                    <label class="font-title-sm text-xs text-on-surface-variant block mb-1">Font Family</label>
+                    <select id="caption-font-select" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg p-2 font-title-sm text-xs">
+                      <option value="Inter" selected>Inter</option>
+                      <option value="Nirmala UI">Nirmala UI (Hindi / Devanagari)</option>
+                      <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+                      <option value="JetBrains Mono">JetBrains Mono</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="font-title-sm text-xs text-on-surface-variant block mb-1">Position</label>
+                    <select id="caption-pos-select" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg p-2 font-title-sm text-xs">
+                      <option value="bottom" selected>Bottom</option>
+                      <option value="middle">Middle</option>
+                      <option value="top">Top</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Color Styling Controls -->
+                <div class="grid grid-cols-3 gap-2">
+                  <div>
+                    <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">Text Color</label>
+                    <input id="caption-color-input" type="color" value="#FFFFFF" class="w-full h-8 rounded border border-outline-variant/40 cursor-pointer bg-white p-0.5"/>
+                  </div>
+                  <div>
+                    <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">Highlight Color</label>
+                    <input id="caption-hi-color-input" type="color" value="#8273D6" class="w-full h-8 rounded border border-outline-variant/40 cursor-pointer bg-white p-0.5"/>
+                  </div>
+                  <div>
+                    <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">Font Size</label>
+                    <input id="caption-size-slider" type="range" min="16" max="44" value="24" class="w-full accent-primary mt-2"/>
+                  </div>
+                </div>
+
+                <!-- Actions: Save Preset & Apply to All -->
+                <div class="flex items-center gap-2 pt-2 border-t border-outline-variant/20">
+                  <button id="btn-save-custom-preset" class="apple-btn flex-1 py-1.5 px-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-title-sm text-xs transition-colors">
+                    Save as Preset
+                  </button>
+                  <button id="btn-apply-preset-all" class="apple-btn flex-1 py-1.5 px-2 rounded-lg bg-primary-fixed hover:bg-primary-fixed/80 text-on-primary-fixed-variant font-title-sm text-xs font-semibold transition-colors">
+                    Apply to All Clips
+                  </button>
+                </div>
+
+              </div>
+
+              <!-- TAB 2: TRANSCRIPT TEXT-BASED EDITOR -->
+              <div id="studio-pane-transcript" class="studio-pane hidden p-space-md flex flex-col gap-space-sm">
+                <div class="flex items-center justify-between pb-space-xs border-b border-outline-variant/20">
+                  <span class="font-headline-md text-xs font-bold text-on-surface uppercase tracking-wider">Text-Based Editing</span>
+                  <span class="text-[10px] text-on-surface-variant">Click text to seek • Delete to trim</span>
+                </div>
+                <div id="transcript-blocks-container" class="flex flex-col gap-2 max-h-72 overflow-y-auto p-1">
+                  <!-- Populated dynamically via app.js -->
+                </div>
+              </div>
+
+              <!-- TAB 3: SMART REFRAMING & SPEAKER TRACKING -->
+              <div id="studio-pane-reframing" class="studio-pane hidden p-space-md flex flex-col gap-space-sm">
+                <div class="flex items-center justify-between pb-space-xs border-b border-outline-variant/20">
+                  <span class="font-headline-md text-xs font-bold text-on-surface uppercase tracking-wider">Smart Reframing & Speaker Tracking</span>
+                </div>
+
+                <div>
+                  <label class="font-title-sm text-xs text-on-surface-variant block mb-1">Layout Mode</label>
+                  <select id="reframing-mode-select" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg p-2 font-title-sm text-xs">
+                    <option value="single" selected>Single Speaker (Smart Face Tracking)</option>
+                    <option value="blur_fill">Blurred Background Fill (No Black Bars)</option>
+                    <option value="stacked">Stacked Vertical (Interview / 2 Speakers)</option>
+                    <option value="side_by_side">Side-by-Side Split</option>
+                    <option value="pip">Picture-in-Picture</option>
+                    <option value="center">Center Crop Fallback</option>
+                  </select>
+                </div>
+
+                <div class="p-space-sm bg-surface-container-low rounded-lg flex items-center justify-between">
+                  <div>
+                    <span class="font-title-sm text-xs font-semibold text-on-surface block">Face-Aware Keyframe Tracking</span>
+                    <span id="speaker-tracking-status" class="text-[10px] text-on-surface-variant">Click to analyze facial trajectory</span>
+                  </div>
+                  <button id="btn-run-speaker-tracking" class="apple-btn py-1 px-3 rounded-lg bg-primary text-white font-title-sm text-xs flex items-center gap-1 shadow-xs">
+                    <span class="material-symbols-outlined text-[15px]">track_changes</span>
+                    <span>Track Speaker</span>
+                  </button>
+                </div>
+
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <label class="font-title-sm text-xs text-on-surface-variant">Horizontal Subject Framing (Crop X)</label>
+                    <span id="crop-x-val" class="font-code-sm text-xs text-primary font-semibold">50%</span>
+                  </div>
+                  <input id="crop-x-slider" type="range" min="0" max="100" value="50" class="w-full accent-primary"/>
+                </div>
+              </div>
+
+              <!-- TAB 4: AUDIO ENHANCEMENT & LOCAL VOICEOVER -->
+              <div id="studio-pane-audio" class="studio-pane hidden p-space-md flex flex-col gap-space-sm">
+                <div class="flex items-center justify-between pb-space-xs border-b border-outline-variant/20">
+                  <span class="font-headline-md text-xs font-bold text-on-surface uppercase tracking-wider">AI Audio Enhancement</span>
+                </div>
+
+                <!-- Audio Filter Toggles -->
+                <div class="flex flex-col gap-2 p-2 bg-surface-container-low rounded-lg">
+                  <label class="flex items-center justify-between text-xs font-title-sm cursor-pointer">
+                    <span>Background Noise Reduction (afftdn)</span>
+                    <input id="toggle-audio-denoise" type="checkbox" class="accent-primary"/>
+                  </label>
+                  <label class="flex items-center justify-between text-xs font-title-sm cursor-pointer">
+                    <span>Broadcast Loudness Normalization (loudnorm)</span>
+                    <input id="toggle-audio-norm" type="checkbox" checked class="accent-primary"/>
+                  </label>
+                  <label class="flex items-center justify-between text-xs font-title-sm cursor-pointer">
+                    <span>Speech Clarity Equalizer Boost</span>
+                    <input id="toggle-audio-clarity" type="checkbox" class="accent-primary"/>
+                  </label>
+                </div>
+
+                <!-- Silence & Filler Detection -->
+                <div class="p-2 bg-surface-container-low rounded-lg flex flex-col gap-1.5">
+                  <div class="flex items-center justify-between">
+                    <span class="font-title-sm text-xs font-semibold text-on-surface">Silence & Filler Word Removal</span>
+                    <button id="btn-scan-fillers" class="apple-btn px-2 py-1 rounded bg-white hover:bg-surface-container text-xs font-title-sm text-primary border border-outline-variant/30 flex items-center gap-1">
+                      <span class="material-symbols-outlined text-[13px]">search</span>
+                      <span>Scan Fillers</span>
+                    </button>
+                  </div>
+                  <div id="filler-results-box" class="hidden text-[11px] text-on-surface-variant flex flex-col gap-1">
+                    <span id="filler-count-label">0 fillers found.</span>
+                    <button id="btn-remove-fillers" class="apple-btn py-1 px-2 rounded bg-error text-white font-title-sm text-[11px] w-full text-center">
+                      Remove Detected Fillers & Silences
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Local Offline Voiceover -->
+                <div class="pt-2 border-t border-outline-variant/20 flex flex-col gap-1.5">
+                  <span class="font-headline-md text-xs font-bold text-on-surface uppercase tracking-wider">Local AI Voiceover (Offline SAPI)</span>
+                  <div class="grid grid-cols-2 gap-2">
+                    <select id="vo-voice-select" class="bg-surface-container-low border border-outline-variant/40 rounded-lg p-1.5 text-xs font-title-sm"></select>
+                    <input id="vo-speed-input" type="number" min="-5" max="5" value="0" placeholder="Speed (-5 to 5)" class="bg-surface-container-low border border-outline-variant/40 rounded-lg p-1.5 text-xs font-title-sm"/>
+                  </div>
+                  <textarea id="vo-text-input" rows="2" placeholder="Enter text for local voiceover synthesis..." class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg p-1.5 text-xs font-title-sm"></textarea>
+                  <button id="btn-generate-vo" class="apple-btn py-1 px-3 rounded-lg bg-primary text-white font-title-sm text-xs flex items-center justify-center gap-1">
+                    <span class="material-symbols-outlined text-[15px]">record_voice_over</span>
+                    <span>Generate Voiceover</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- TAB 5: B-ROLL & MOTION GRAPHICS -->
+              <div id="studio-pane-broll" class="studio-pane hidden p-space-md flex flex-col gap-space-sm">
+                <div class="flex items-center justify-between pb-space-xs border-b border-outline-variant/20">
+                  <span class="font-headline-md text-xs font-bold text-on-surface uppercase tracking-wider">Smart B-Roll & Graphics</span>
+                </div>
+
+                <!-- Transcript-Matched B-Roll Suggestions -->
+                <div>
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="font-title-sm text-xs text-on-surface-variant font-medium">Smart Suggestions for Current Clip</span>
+                    <button id="btn-refresh-broll-suggestions" class="text-[11px] text-primary hover:underline font-title-sm">Refresh</button>
+                  </div>
+                  <div id="broll-suggestions-list" class="flex flex-col gap-1 max-h-32 overflow-y-auto p-1 bg-surface-container-low rounded-lg">
+                    <span class="text-[11px] text-on-surface-variant p-2 text-center">Import B-Roll assets to enable topic matching.</span>
+                  </div>
+                </div>
+
+                <!-- 8 Motion Graphics Templates -->
+                <div class="pt-2 border-t border-outline-variant/20">
+                  <span class="font-title-sm text-xs text-on-surface-variant block mb-1">Apple-Styled Motion Graphics Templates (8 Templates)</span>
+                  <div id="motion-graphics-grid" class="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto p-1 bg-surface-container-low rounded-lg">
+                    <!-- Populated via app.js -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- TAB 6: BRAND KIT & PRO EXPORT -->
+              <div id="studio-pane-brand" class="studio-pane hidden p-space-md flex flex-col gap-space-sm">
+                <div class="flex items-center justify-between pb-space-xs border-b border-outline-variant/20">
+                  <span class="font-headline-md text-xs font-bold text-on-surface uppercase tracking-wider">Brand Kit & Professional Output</span>
+                </div>
+
+                <!-- Brand Profile Selection -->
+                <div>
+                  <label class="font-title-sm text-xs text-on-surface-variant block mb-1">Active Brand Profile</label>
+                  <select id="brand-profile-select" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg p-2 font-title-sm text-xs">
+                    <option value="">Default KLYPTRA Studio</option>
+                  </select>
+                </div>
+
+                <!-- Video Specs -->
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">Output Resolution</label>
+                    <select id="export-res-select" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg p-1.5 font-title-sm text-xs">
+                      <option value="1080p" selected>1080p FHD</option>
+                      <option value="720p">720p HD</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">Frame Rate</label>
+                    <select id="export-fps-select" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg p-1.5 font-title-sm text-xs">
+                      <option value="30" selected>30 FPS</option>
+                      <option value="60">60 FPS</option>
+                      <option value="24">24 FPS (Cinematic)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Subtitles & Premiere XML Export Actions -->
+                <div class="pt-2 border-t border-outline-variant/20 flex flex-col gap-2">
+                  <span class="font-title-sm text-xs font-semibold text-on-surface">Export Subtitles & Sequences</span>
+                  <div class="grid grid-cols-3 gap-1.5">
+                    <button id="btn-export-srt" class="apple-btn py-1.5 px-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-title-sm text-xs text-center border border-outline-variant/30">
+                      SRT Subtitles
+                    </button>
+                    <button id="btn-export-vtt" class="apple-btn py-1.5 px-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-title-sm text-xs text-center border border-outline-variant/30">
+                      WebVTT
+                    </button>
+                    <button id="btn-export-xml" class="apple-btn py-1.5 px-2 rounded-lg bg-primary-fixed hover:bg-primary-fixed/80 text-on-primary-fixed-variant font-title-sm text-xs font-semibold text-center">
+                      Premiere XML
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 4: MY PROJECTS ================= -->
+      <section id="view-projects" class="view-panel hidden w-full max-w-5xl mx-auto flex flex-col">
+        <div class="flex items-center justify-between pb-space-md border-b border-outline-variant/20 mb-space-lg">
+          <div>
+            <h2 class="font-headline-lg text-2xl font-bold text-on-surface">My Projects</h2>
+            <p class="font-body-md text-xs text-on-surface-variant mt-0.5">Persistent local projects stored in SQLite database.</p>
+          </div>
+          <button data-nav="new-project" class="py-1.5 px-3 rounded-lg bg-primary text-white font-title-sm text-xs font-medium flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">add</span>
+            <span>New Video</span>
+          </button>
+        </div>
+
+        <!-- Projects Grid -->
+        <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-md">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="projects-empty-state" class="w-full py-space-xl flex flex-col items-center justify-center text-center">
+          <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant mb-space-md">
+            <span class="material-symbols-outlined text-[32px]">folder_open</span>
+          </div>
+          <h3 class="font-headline-md text-lg font-semibold text-on-surface mb-1">No Projects Found</h3>
+          <p class="font-body-md text-xs text-on-surface-variant max-w-sm mb-space-md">The project library is clean. Import your first video to start.</p>
+          <button data-nav="new-project" class="py-2 px-4 rounded-lg bg-primary text-white font-title-sm text-xs font-medium">Create Project</button>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 5: SETTINGS & EXPORTS (REDESIGNED) ================= -->
+      <section id="view-settings" class="view-panel hidden w-full max-w-5xl mx-auto flex flex-col gap-5">
+        
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-outline-variant/20 gap-3">
+          <div>
+            <h2 class="font-headline-lg text-2xl font-bold text-on-surface">Settings & Exports</h2>
+            <p class="font-body-md text-xs text-on-surface-variant mt-0.5">Configure local AI models, export defaults, and appearance.</p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="saveAllSettings()" class="apple-btn py-1.5 px-4 rounded-xl bg-primary text-white hover:bg-primary-container font-title-sm text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors">
+              <span class="material-symbols-outlined text-[16px]">save</span>
+              <span>Save</span>
+            </button>
+            <button onclick="confirmResetSettings()" class="apple-btn py-1.5 px-3 rounded-xl bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-error font-title-sm text-xs flex items-center gap-1 transition-colors" title="Reset defaults">
+              <span class="material-symbols-outlined text-[16px]">restart_alt</span>
+              <span>Reset</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 1. COMPACT SYSTEM STATUS BAR -->
+        <div class="liquid-glass-card rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-3">
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 flex-1 min-w-0">
+            <div class="flex items-center gap-2.5 min-w-0 px-2 py-1 rounded-xl bg-surface-container-low/60">
+              <span class="material-symbols-outlined text-[18px] text-primary shrink-0">memory</span>
+              <div class="min-w-0">
+                <span class="text-[10px] font-code-sm text-on-surface-variant uppercase block">GPU</span>
+                <span id="compact-gpu-status" class="text-xs font-title-sm font-semibold text-on-surface truncate block">Checking...</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2.5 min-w-0 px-2 py-1 rounded-xl bg-surface-container-low/60">
+              <span class="material-symbols-outlined text-[18px] text-primary shrink-0">developer_board</span>
+              <div class="min-w-0">
+                <span class="text-[10px] font-code-sm text-on-surface-variant uppercase block">Memory</span>
+                <span id="compact-ram-status" class="text-xs font-title-sm font-semibold text-on-surface truncate block">-- GB Free</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2.5 min-w-0 px-2 py-1 rounded-xl bg-surface-container-low/60">
+              <span class="material-symbols-outlined text-[18px] text-primary shrink-0">hard_drive</span>
+              <div class="min-w-0">
+                <span class="text-[10px] font-code-sm text-on-surface-variant uppercase block">Storage</span>
+                <span id="compact-disk-status" class="text-xs font-title-sm font-semibold text-on-surface truncate block">-- GB Free</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2.5 min-w-0 px-2 py-1 rounded-xl bg-surface-container-low/60">
+              <span class="material-symbols-outlined text-[18px] text-primary shrink-0">movie</span>
+              <div class="min-w-0">
+                <span class="text-[10px] font-code-sm text-on-surface-variant uppercase block">FFmpeg</span>
+                <span id="compact-ffmpeg-status" class="text-xs font-title-sm font-semibold text-on-surface truncate block">Ready</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2.5 min-w-0 px-2 py-1 rounded-xl bg-surface-container-low/60">
+              <span class="material-symbols-outlined text-[18px] text-primary shrink-0">graphic_eq</span>
+              <div class="min-w-0">
+                <span class="text-[10px] font-code-sm text-on-surface-variant uppercase block">AI Model</span>
+                <span id="compact-model-status" class="text-xs font-title-sm font-semibold text-on-surface truncate block">Base</span>
+              </div>
+            </div>
+          </div>
+          <button onclick="refreshHardware()" class="apple-btn p-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-primary transition-colors shrink-0" title="Refresh System Status">
+            <span class="material-symbols-outlined text-[18px]">refresh</span>
+          </button>
+        </div>
+
+        <!-- 2. AI PROCESSING & WHISPER MODELS -->
+        <div class="liquid-glass-card rounded-2xl p-5 flex flex-col gap-4">
+          <div class="flex items-center justify-between border-b border-outline-variant/20 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[19px] text-primary">auto_awesome</span>
+              <h3 class="font-headline-md text-sm font-bold text-on-surface">AI Processing & Models</h3>
+            </div>
+            <button onclick="openFirstLaunchModal(true)" class="text-xs font-title-sm text-primary hover:underline flex items-center gap-1">
+              <span class="material-symbols-outlined text-[15px]">tune</span>
+              <span>Model Setup Wizard</span>
+            </button>
+          </div>
+
+          <!-- Processing Presets -->
+          <div>
+            <label class="font-title-sm text-xs text-on-surface-variant block mb-2 font-medium">Processing Preset</label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <label class="profile-card cursor-pointer p-3 rounded-xl border border-outline-variant/40 hover:border-primary transition-all flex flex-col gap-0.5 bg-surface-container-low/70" data-profile="fast">
+                <div class="flex items-center justify-between">
+                  <span class="font-title-sm text-xs font-bold text-on-surface">Fast</span>
+                  <input type="radio" name="setting-profile" value="fast" class="accent-primary">
+                </div>
+                <p class="font-body-sm text-[11px] text-on-surface-variant">Quickest turnaround with lighter model.</p>
+              </label>
+
+              <label class="profile-card cursor-pointer p-3 rounded-xl border-2 border-primary transition-all flex flex-col gap-0.5 bg-primary-fixed/20" data-profile="balanced">
+                <div class="flex items-center justify-between">
+                  <span class="font-title-sm text-xs font-bold text-on-surface">Balanced</span>
+                  <input type="radio" name="setting-profile" value="balanced" checked class="accent-primary">
+                </div>
+                <p class="font-body-sm text-[11px] text-on-surface-variant">Best mix of speed and word timestamps.</p>
+              </label>
+
+              <label class="profile-card cursor-pointer p-3 rounded-xl border border-outline-variant/40 hover:border-primary transition-all flex flex-col gap-0.5 bg-surface-container-low/70" data-profile="accurate">
+                <div class="flex items-center justify-between">
+                  <span class="font-title-sm text-xs font-bold text-on-surface">Accurate</span>
+                  <input type="radio" name="setting-profile" value="accurate" class="accent-primary">
+                </div>
+                <p class="font-body-sm text-[11px] text-on-surface-variant">Highest precision for complex speech.</p>
+              </label>
+            </div>
+          </div>
+
+          <!-- Compact Whisper Models Selector -->
+          <div>
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <label class="font-title-sm text-xs text-on-surface-variant font-medium">Local Whisper Models</label>
+              <div class="flex items-center gap-2 text-[11px] text-on-surface-variant">
+                <span id="models-dir-display" class="font-code-sm truncate max-w-[240px]">%LOCALAPPDATA%\KLYPTRA\models</span>
+                <button onclick="changeModelsDirectory()" class="text-primary hover:underline font-title-sm">Change Folder</button>
+              </div>
+            </div>
+            <div id="models-list-container" class="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+              <!-- Dynamically populated model chips -->
+            </div>
+          </div>
+
+          <!-- Compact AI Preferences Row -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-outline-variant/20">
+            <div>
+              <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">Language</label>
+              <select id="set-language" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-xl p-2 font-title-sm text-xs text-on-surface">
+                <option value="auto" selected>Auto-Detect</option>
+                <option value="en">English</option>
+                <option value="hi">Hindi (हिन्दी)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">Clip Length</label>
+              <select id="set-clip-duration" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-xl p-2 font-title-sm text-xs text-on-surface">
+                <option value="15-30">15 – 30 sec</option>
+                <option value="30-60" selected>30 – 60 sec</option>
+                <option value="60-90">60 – 90 sec</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">Max Clips</label>
+              <input id="set-clip-count" type="number" min="1" max="15" value="5" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-xl p-2 font-code-sm text-xs text-on-surface">
+            </div>
+
+            <div class="flex flex-col justify-end gap-1.5">
+              <label class="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-surface-container-low cursor-pointer">
+                <span class="font-title-sm text-[11px] text-on-surface font-medium">GPU Acceleration</span>
+                <input id="set-pref-gpu" type="checkbox" checked class="accent-primary w-3.5 h-3.5">
+              </label>
+              <label class="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-surface-container-low cursor-pointer">
+                <span class="font-title-sm text-[11px] text-on-surface font-medium">Silence Filter (VAD)</span>
+                <input id="set-pref-vad" type="checkbox" checked class="accent-primary w-3.5 h-3.5">
+              </label>
+              <input id="set-pref-fallback" type="checkbox" checked class="hidden">
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. EXPORT SETTINGS -->
+        <div class="liquid-glass-card rounded-2xl p-5 flex flex-col gap-4">
+          <div class="flex items-center gap-2 border-b border-outline-variant/20 pb-2.5">
+            <span class="material-symbols-outlined text-[19px] text-primary">ios_share</span>
+            <h3 class="font-headline-md text-sm font-bold text-on-surface">Export Settings</h3>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div>
+              <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">Resolution</label>
+              <select id="set-export-res" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-xl p-2 font-title-sm text-xs text-on-surface">
+                <option value="1080p" selected>1080p FHD</option>
+                <option value="720p">720p HD</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">Aspect Ratio</label>
+              <select id="set-export-ratio" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-xl p-2 font-title-sm text-xs text-on-surface">
+                <option value="9:16" selected>9:16 Vertical</option>
+                <option value="1:1">1:1 Square</option>
+                <option value="4:5">4:5 Portrait</option>
+                <option value="16:9">16:9 Landscape</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">Frame Rate</label>
+              <select id="set-export-fps" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-xl p-2 font-title-sm text-xs text-on-surface">
+                <option value="30" selected>30 FPS</option>
+                <option value="60">60 FPS</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">Quality</label>
+              <select id="set-export-quality" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-xl p-2 font-title-sm text-xs text-on-surface">
+                <option value="high" selected>High</option>
+                <option value="balanced">Balanced</option>
+                <option value="compact">Compact</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">Captions</label>
+              <select id="set-export-caption-format" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-xl p-2 font-title-sm text-xs text-on-surface">
+                <option value="burned" selected>Burned-in</option>
+                <option value="srt">SRT Sidecar</option>
+                <option value="vtt">VTT Sidecar</option>
+                <option value="none">None</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Output Location -->
+          <div class="p-3 rounded-xl bg-surface-container-low/70 border border-outline-variant/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="min-w-0">
+              <span class="font-title-sm text-[11px] text-on-surface-variant block">Output Location</span>
+              <p id="export-path-display" class="font-code-sm text-xs text-on-surface truncate">%LOCALAPPDATA%\KLYPTRA\exports</p>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button onclick="changeExportDirectory()" class="apple-btn py-1 px-2.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-title-sm text-xs">
+                Browse
+              </button>
+              <button onclick="openFolderInExplorer('')" class="apple-btn py-1 px-2.5 rounded-lg bg-primary-fixed text-on-primary-fixed-variant hover:bg-primary-fixed/80 font-title-sm text-xs flex items-center gap-1">
+                <span class="material-symbols-outlined text-[15px]">folder_open</span>
+                <span>Open</span>
+              </button>
+              <button onclick="resetExportDirectory()" class="apple-btn py-1 px-2 rounded-lg text-on-surface-variant hover:text-error text-xs" title="Reset output folder">
+                <span class="material-symbols-outlined text-[15px]">restart_alt</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Advanced Export Options (Collapsed by default) -->
+          <details class="group pt-1">
+            <summary class="flex items-center justify-between cursor-pointer text-xs font-title-sm text-on-surface-variant hover:text-on-surface py-1 select-none">
+              <span class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px]">tune</span>
+                <span>Advanced Export Options</span>
+              </span>
+              <span class="material-symbols-outlined text-[18px] details-chevron">expand_more</span>
+            </summary>
+            <div class="pt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="font-title-sm text-[11px] text-on-surface-variant block mb-1">Video Encoder</label>
+                <select id="set-export-encoder" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-xl p-2 font-title-sm text-xs text-on-surface">
+                  <option value="auto" selected>Auto (Hardware / CPU Fallback)</option>
+                  <option value="h264_nvenc">NVIDIA NVENC</option>
+                  <option value="h264_mf">Windows Media Foundation</option>
+                  <option value="libx264">CPU libx264</option>
+                </select>
+              </div>
+              <div class="flex items-end">
+                <label class="flex items-center justify-between w-full p-2 rounded-xl bg-surface-container-low cursor-pointer">
+                  <span class="font-title-sm text-xs text-on-surface">Launch at Windows Startup</span>
+                  <input id="set-auto-start" type="checkbox" class="accent-primary w-4 h-4">
+                </label>
+              </div>
+            </div>
+          </details>
+        </div>
+
+        <!-- 4. APPEARANCE & MOTION -->
+        <div class="liquid-glass-card rounded-2xl p-5 flex flex-col gap-4">
+          <div class="flex items-center gap-2 border-b border-outline-variant/20 pb-2.5">
+            <span class="material-symbols-outlined text-[19px] text-primary">palette</span>
+            <h3 class="font-headline-md text-sm font-bold text-on-surface">Appearance & Motion</h3>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <label class="apple-card p-3 rounded-xl border border-outline-variant/30 bg-surface-container-low/70 cursor-pointer flex items-center gap-2.5">
+              <input type="radio" name="theme-setting" value="light" onchange="KlyptraTheme.setMode('light')" class="accent-primary w-4 h-4">
+              <div class="flex items-center gap-1.5 font-title-sm text-xs text-on-surface font-semibold">
+                <span class="material-symbols-outlined text-[16px] text-amber-500">light_mode</span>
+                <span>Light (Default)</span>
+              </div>
+            </label>
+
+            <label class="apple-card p-3 rounded-xl border border-outline-variant/30 bg-surface-container-low/70 cursor-pointer flex items-center gap-2.5">
+              <input type="radio" name="theme-setting" value="dark" onchange="KlyptraTheme.setMode('dark')" class="accent-primary w-4 h-4">
+              <div class="flex items-center gap-1.5 font-title-sm text-xs text-on-surface font-semibold">
+                <span class="material-symbols-outlined text-[16px] text-[#A796FF]">dark_mode</span>
+                <span>Graphite Dark</span>
+              </div>
+            </label>
+
+            <label class="apple-card p-3 rounded-xl border border-outline-variant/30 bg-surface-container-low/70 cursor-pointer flex items-center gap-2.5">
+              <input type="radio" name="theme-setting" value="system" onchange="KlyptraTheme.setMode('system')" class="accent-primary w-4 h-4">
+              <div class="flex items-center gap-1.5 font-title-sm text-xs text-on-surface font-semibold">
+                <span class="material-symbols-outlined text-[16px] text-primary">desktop_windows</span>
+                <span>System</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low/70 cursor-pointer">
+              <div>
+                <span class="font-title-sm text-xs text-on-surface font-semibold block">Ambient Background</span>
+                <span class="font-body-sm text-[11px] text-on-surface-variant">Subtle GPU shader motion</span>
+              </div>
+              <input id="set-shader-enabled" type="checkbox" checked class="accent-primary w-4 h-4" onchange="toggleBackgroundShader(this.checked)">
+            </label>
+
+            <label class="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low/70 cursor-pointer">
+              <div>
+                <span class="font-title-sm text-xs text-on-surface font-semibold block">Reduced Motion</span>
+                <span class="font-body-sm text-[11px] text-on-surface-variant">Minimize UI transitions</span>
+              </div>
+              <input id="set-reduced-motion" type="checkbox" class="accent-primary w-4 h-4" onchange="toggleReducedMotion(this.checked)">
+            </label>
+          </div>
+        </div>
+
+        <!-- 5. COLLAPSIBLE ADVANCED DIAGNOSTICS -->
+        <details class="liquid-glass-card rounded-2xl p-5 group">
+          <summary class="flex items-center justify-between cursor-pointer select-none">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[19px] text-primary">build</span>
+              <h3 class="font-headline-md text-sm font-bold text-on-surface">Advanced Diagnostics & Storage</h3>
+            </div>
+            <span class="material-symbols-outlined text-[20px] text-on-surface-variant details-chevron">expand_more</span>
+          </summary>
+
+          <div class="pt-4 mt-3 border-t border-outline-variant/20 flex flex-col gap-4">
+            <!-- Action Toolbar -->
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="refreshHardware()" class="apple-btn py-1.5 px-3 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-title-sm text-xs flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[15px]">refresh</span>
+                <span>Refresh</span>
+              </button>
+              <button onclick="testGPU()" class="apple-btn py-1.5 px-3 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-title-sm text-xs flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[15px]">speed</span>
+                <span>Test GPU</span>
+              </button>
+              <button onclick="testFFmpeg()" class="apple-btn py-1.5 px-3 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-title-sm text-xs flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[15px]">videocam</span>
+                <span>Test FFmpeg</span>
+              </button>
+              <button onclick="openDiagnosticLogs()" class="apple-btn py-1.5 px-3 rounded-xl bg-primary-fixed/60 hover:bg-primary-fixed text-on-primary-fixed-variant font-title-sm text-xs flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[15px]">terminal</span>
+                <span>Diagnostic Logs</span>
+              </button>
+              <button onclick="confirmClearTempFiles()" class="apple-btn py-1.5 px-3 rounded-xl bg-error-container/40 hover:bg-error-container text-error font-title-sm text-xs flex items-center gap-1.5 ml-auto">
+                <span class="material-symbols-outlined text-[15px]">delete_sweep</span>
+                <span>Clear Temp Cache</span>
+              </button>
+            </div>
+
+            <!-- Detailed Hardware & Encoder Specs -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+              <div class="p-3 rounded-xl bg-surface-container-low/70 border border-outline-variant/20">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="font-code-sm text-[10px] text-on-surface-variant uppercase">GPU Details</span>
+                  <span id="hw-gpu-status-badge" class="px-1.5 py-0.5 rounded text-[10px] font-code-sm bg-primary-fixed text-on-primary-fixed-variant">--</span>
+                </div>
+                <p id="hw-gpu-name" class="font-title-sm font-bold text-on-surface truncate">--</p>
+                <span id="hw-gpu-driver" class="font-code-sm text-[11px] text-on-surface-variant block mt-1">Driver: --</span>
+                <span id="hw-gpu-vram" class="font-code-sm text-[11px] text-on-surface-variant block">VRAM: --</span>
+              </div>
+
+              <div class="p-3 rounded-xl bg-surface-container-low/70 border border-outline-variant/20">
+                <span class="font-code-sm text-[10px] text-on-surface-variant uppercase block mb-1">CPU & Memory</span>
+                <p id="hw-cpu-name" class="font-title-sm font-bold text-on-surface truncate">--</p>
+                <span id="hw-cpu-cores" class="font-code-sm text-[11px] text-on-surface-variant block mt-1">Cores: --</span>
+                <span id="hw-ram-summary" class="font-code-sm text-[11px] text-on-surface-variant block">--</span>
+              </div>
+
+              <div class="p-3 rounded-xl bg-surface-container-low/70 border border-outline-variant/20">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="font-code-sm text-[10px] text-on-surface-variant uppercase">Encoder & Whisper</span>
+                  <span id="hw-encoder-badge" class="px-1.5 py-0.5 rounded text-[10px] font-code-sm bg-primary-fixed text-on-primary-fixed-variant">--</span>
+                </div>
+                <p id="hw-encoder-name" class="font-title-sm font-bold text-on-surface truncate">--</p>
+                <span id="hw-ffmpeg-ver" class="font-code-sm text-[11px] text-on-surface-variant block truncate mt-1">--</span>
+                <span id="hw-whisper-runtime" class="font-code-sm text-[11px] text-on-surface-variant block">--</span>
+              </div>
+            </div>
+
+            <!-- Storage Breakdown & Quick Folders -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div class="p-2.5 rounded-xl bg-surface-container-low/70">
+                <span class="font-code-sm text-[10px] text-on-surface-variant uppercase block">Projects</span>
+                <span id="storage-projects-size" class="font-title-sm text-xs font-bold text-on-surface">-- MB</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-surface-container-low/70">
+                <span class="font-code-sm text-[10px] text-on-surface-variant uppercase block">AI Models</span>
+                <span id="storage-models-size" class="font-title-sm text-xs font-bold text-on-surface">-- MB</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-surface-container-low/70">
+                <span class="font-code-sm text-[10px] text-on-surface-variant uppercase block">Cache</span>
+                <span id="storage-cache-size" class="font-title-sm text-xs font-bold text-on-surface">-- MB</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-surface-container-low/70">
+                <span class="font-code-sm text-[10px] text-on-surface-variant uppercase block">Exports</span>
+                <span id="storage-exports-size" class="font-title-sm text-xs font-bold text-on-surface">-- MB</span>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <span class="font-title-sm text-on-surface-variant">Folders:</span>
+              <button onclick="openNamedFolder('appdata')" class="py-1 px-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-title-sm">AppData</button>
+              <button onclick="openNamedFolder('projects')" class="py-1 px-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-title-sm">Projects</button>
+              <button onclick="openNamedFolder('models')" class="py-1 px-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-title-sm">Models</button>
+              <button onclick="openNamedFolder('exports')" class="py-1 px-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-title-sm">Exports</button>
+              <span class="ml-auto font-code-sm text-[11px] text-on-surface-variant">KLYPTRA Studio v1.0.0</span>
+            </div>
+          </div>
+        </details>
+
+        <!-- 6. EXPORT HISTORY -->
+        <div class="liquid-glass-card rounded-2xl p-5 flex flex-col gap-3">
+          <div class="flex items-center justify-between border-b border-outline-variant/20 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[19px] text-primary">history</span>
+              <h3 class="font-headline-md text-sm font-bold text-on-surface">Export History</h3>
+            </div>
+            <button onclick="openFolderInExplorer('')" class="apple-btn py-1 px-3 rounded-xl bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-title-sm text-xs flex items-center gap-1 transition-colors">
+              <span class="material-symbols-outlined text-[15px]">folder</span>
+              <span>Open Exports</span>
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left">
+              <thead>
+                <tr class="border-b border-outline-variant/20 font-code-sm text-[11px] text-on-surface-variant uppercase">
+                  <th class="py-2 px-3">Filename</th>
+                  <th class="py-2 px-3">Specs</th>
+                  <th class="py-2 px-3">Size</th>
+                  <th class="py-2 px-3">Status</th>
+                  <th class="py-2 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="exports-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <div id="exports-empty-state" class="py-6 text-center hidden">
+            <p class="font-body-md text-xs text-on-surface-variant">No exports yet. Render a clip in the editor to see it here.</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- First-Launch Setup Experience Modal -->
+  <div id="modal-first-launch" class="fixed inset-0 bg-black/50 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="liquid-glass-card bg-surface-container-lowest rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl flex flex-col gap-5">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-primary flex items-center justify-center text-white shadow-sm shrink-0">
+          <span class="material-symbols-outlined text-[24px]">movie_filter</span>
+        </div>
+        <div>
+          <h2 class="font-headline-lg text-lg font-bold text-on-surface">Welcome to KLYPTRA</h2>
+          <p class="font-body-sm text-xs text-on-surface-variant">Download a local AI speech model once to run completely offline.</p>
+        </div>
+      </div>
+
+      <div>
+        <label class="font-title-sm text-xs font-semibold text-on-surface-variant block mb-2">Choose a Whisper Speech Model</label>
+        <div id="setup-model-options" class="grid grid-cols-2 gap-2.5">
+          <label class="cursor-pointer p-3 rounded-xl border border-outline-variant/40 bg-surface-container-low/70 hover:border-primary transition-all flex flex-col gap-0.5">
+            <div class="flex items-center justify-between">
+              <span class="font-title-sm text-xs font-bold text-on-surface">Tiny</span>
+              <input type="radio" name="setup-model" value="tiny" class="accent-primary">
+            </div>
+            <span class="font-code-sm text-[11px] text-on-surface-variant">~75 MB • Fastest</span>
+          </label>
+          <label class="cursor-pointer p-3 rounded-xl border-2 border-primary bg-primary-fixed/20 transition-all flex flex-col gap-0.5">
+            <div class="flex items-center justify-between">
+              <span class="font-title-sm text-xs font-bold text-on-surface">Base (Recommended)</span>
+              <input type="radio" name="setup-model" value="base" checked class="accent-primary">
+            </div>
+            <span class="font-code-sm text-[11px] text-on-surface-variant">~145 MB • Balanced</span>
+          </label>
+          <label class="cursor-pointer p-3 rounded-xl border border-outline-variant/40 bg-surface-container-low/70 hover:border-primary transition-all flex flex-col gap-0.5">
+            <div class="flex items-center justify-between">
+              <span class="font-title-sm text-xs font-bold text-on-surface">Small</span>
+              <input type="radio" name="setup-model" value="small" class="accent-primary">
+            </div>
+            <span class="font-code-sm text-[11px] text-on-surface-variant">~480 MB • High accuracy</span>
+          </label>
+          <label class="cursor-pointer p-3 rounded-xl border border-outline-variant/40 bg-surface-container-low/70 hover:border-primary transition-all flex flex-col gap-0.5">
+            <div class="flex items-center justify-between">
+              <span class="font-title-sm text-xs font-bold text-on-surface">Medium</span>
+              <input type="radio" name="setup-model" value="medium" class="accent-primary">
+            </div>
+            <span class="font-code-sm text-[11px] text-on-surface-variant">~1.5 GB • Best precision</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="p-3 rounded-xl bg-surface-container-low/70 border border-outline-variant/20 flex items-center justify-between gap-2">
+        <div class="min-w-0">
+          <span class="font-title-sm text-[11px] text-on-surface-variant block">Model Storage Location</span>
+          <span id="setup-models-dir-display" class="font-code-sm text-[11px] text-on-surface truncate block">%LOCALAPPDATA%\KLYPTRA\models</span>
+        </div>
+        <button onclick="changeModelsDirectory(true)" class="apple-btn py-1 px-2.5 rounded-lg bg-surface-container-high text-on-surface font-title-sm text-xs shrink-0">Change</button>
+      </div>
+
+      <div id="setup-progress-wrap" class="hidden flex flex-col gap-1.5">
+        <div class="flex justify-between text-xs font-code-sm text-on-surface-variant">
+          <span id="setup-progress-msg">Downloading model...</span>
+          <span id="setup-progress-pct" class="text-primary font-bold">0%</span>
+        </div>
+        <div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
+          <div id="setup-progress-bar" class="h-full bg-primary rounded-full transition-all duration-300 w-0"></div>
+        </div>
+      </div>
+
+      <p class="text-[11px] text-on-surface-variant">
+        Internet is required only for this initial download. Afterward, video processing works 100% offline.
+      </p>
+
+      <div class="flex items-center justify-end gap-2 pt-1">
+        <button id="btn-setup-skip" onclick="skipFirstLaunchSetup()" class="apple-btn py-2 px-4 rounded-xl text-xs font-title-sm text-on-surface-variant hover:bg-surface-container">
+          Skip for Now
+        </button>
+        <button id="btn-setup-download" onclick="runFirstLaunchDownload()" class="apple-btn py-2 px-5 rounded-xl bg-primary text-white hover:bg-primary-container font-title-sm text-xs font-semibold shadow-sm flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[16px]">download</span>
+          <span>Download & Start</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Real-Time Processing Modal Overlay -->
+  <div id="modal-processing" class="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-space-md hidden">
+    <div class="bg-surface-container-lowest rounded-2xl p-space-xl max-w-md w-full shadow-2xl flex flex-col items-center text-center border border-outline-variant/30">
+      <div id="modal-processing-icon-wrap" class="w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center text-primary mb-space-md shadow-inner transition-colors">
+        <span id="modal-processing-icon" class="material-symbols-outlined text-[32px] animate-spin">refresh</span>
+      </div>
+      <h3 id="modal-processing-title" class="font-headline-md text-lg font-bold text-on-surface mb-1">AI Processing in Progress</h3>
+      <p id="modal-processing-msg" class="font-body-md text-xs text-on-surface-variant mb-space-md max-w-sm truncate">
+        Analyzing speech and extracting video moments...
+      </p>
+
+      <!-- Live Progress Bar & Percentage -->
+      <div class="w-full flex items-center justify-between text-xs font-code-sm text-on-surface-variant mb-1">
+        <span>Processing Pipeline</span>
+        <span id="modal-processing-pct" class="font-bold text-primary">0%</span>
+      </div>
+      <div class="w-full h-2.5 bg-surface-container-high rounded-full overflow-hidden mb-space-md shadow-inner">
+        <div id="modal-progress-bar" class="h-full bg-primary rounded-full transition-all duration-300 w-0"></div>
+      </div>
+
+      <!-- Real Processing Stages Checklist -->
+      <div id="modal-processing-stages" class="w-full flex flex-col gap-1.5 p-space-sm bg-surface-container-low rounded-xl text-left border border-outline-variant/20 mb-space-md">
+        <div class="stage-item flex items-center justify-between text-xs font-body-sm text-on-surface-variant" data-stage="probe">
+          <span class="flex items-center gap-1.5"><span class="stage-icon material-symbols-outlined text-[15px] text-outline">pending</span> 1. Video Probe & Frame Analysis</span>
+          <span class="stage-status font-code-sm text-[10px]">Pending</span>
+        </div>
+        <div class="stage-item flex items-center justify-between text-xs font-body-sm text-on-surface-variant" data-stage="audio">
+          <span class="flex items-center gap-1.5"><span class="stage-icon material-symbols-outlined text-[15px] text-outline">pending</span> 2. Audio Track Extraction</span>
+          <span class="stage-status font-code-sm text-[10px]">Pending</span>
+        </div>
+        <div class="stage-item flex items-center justify-between text-xs font-body-sm text-on-surface-variant" data-stage="transcribe">
+          <span class="flex items-center gap-1.5"><span class="stage-icon material-symbols-outlined text-[15px] text-outline">pending</span> 3. Neural Whisper Speech-to-Text</span>
+          <span class="stage-status font-code-sm text-[10px]">Pending</span>
+        </div>
+        <div class="stage-item flex items-center justify-between text-xs font-body-sm text-on-surface-variant" data-stage="silence">
+          <span class="flex items-center gap-1.5"><span class="stage-icon material-symbols-outlined text-[15px] text-outline">pending</span> 4. Silence & Pacing Cadence Scan</span>
+          <span class="stage-status font-code-sm text-[10px]">Pending</span>
+        </div>
+        <div class="stage-item flex items-center justify-between text-xs font-body-sm text-on-surface-variant" data-stage="detect">
+          <span class="flex items-center gap-1.5"><span class="stage-icon material-symbols-outlined text-[15px] text-outline">pending</span> 5. AI Viral Moments & Hook Detection</span>
+          <span class="stage-status font-code-sm text-[10px]">Pending</span>
+        </div>
+      </div>
+
+      <!-- Error Actions (Shown only on failure) -->
+      <div id="modal-processing-error-actions" class="w-full flex items-center gap-2 mb-space-md hidden">
+        <button id="modal-processing-retry-btn" class="flex-1 py-2 px-3 rounded-xl bg-primary hover:bg-primary-container text-white font-title-sm text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer">
+          <span class="material-symbols-outlined text-[16px]">refresh</span>
+          <span>Retry Processing</span>
+        </button>
+        <button id="modal-processing-dismiss-btn" class="py-2 px-3 rounded-xl bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-title-sm text-xs flex items-center justify-center gap-1 transition-all cursor-pointer">
+          <span>Close</span>
+        </button>
+      </div>
+      
+      <span id="modal-processing-footer-text" class="font-code-sm text-[11px] text-on-surface-variant">Running locally on Windows • Hardware Acceleration Active</span>
+    </div>
+  </div>
+
+  <!-- Diagnostic Logs Modal Dialog -->
+  <div id="modal-logs" class="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-space-md hidden">
+    <div class="bg-surface-container-lowest rounded-2xl max-w-3xl w-full shadow-2xl flex flex-col max-h-[85vh] overflow-hidden border border-outline-variant/30">
+      <div class="px-space-lg py-space-md border-b border-outline-variant/20 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-[20px]">terminal</span>
+          <h3 class="font-headline-md text-base font-bold text-on-surface">Application Diagnostic Logs</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="refreshDiagnosticLogs()" class="apple-btn py-1 px-2.5 rounded bg-surface-container-low hover:bg-surface-container text-xs font-title-sm flex items-center gap-1 transition-colors">
+            <span class="material-symbols-outlined text-[15px]">refresh</span>
+            <span>Refresh</span>
+          </button>
+          <button onclick="copyDiagnosticLogs()" class="apple-btn py-1 px-2.5 rounded bg-surface-container-low hover:bg-surface-container text-xs font-title-sm flex items-center gap-1 transition-colors">
+            <span class="material-symbols-outlined text-[15px]">content_copy</span>
+            <span>Copy</span>
+          </button>
+          <button onclick="closeDiagnosticLogs()" class="apple-btn w-7 h-7 flex items-center justify-center rounded-lg hover:bg-surface-container text-on-surface-variant">
+            <span class="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+      </div>
+      <div class="p-space-md flex-1 overflow-y-auto bg-surface-container-lowest">
+        <pre id="diagnostic-logs-pre" class="font-code-sm text-[11px] leading-relaxed text-on-surface whitespace-pre-wrap select-text">Loading diagnostic logs...</pre>
+      </div>
+      <div class="px-space-lg py-space-sm bg-surface-container-low border-t border-outline-variant/20 flex items-center justify-between">
+        <span class="font-code-sm text-[10px] text-on-surface-variant">Log file: %LOCALAPPDATA%\KLYPTRA\logs\klyptra.log</span>
+        <button onclick="closeDiagnosticLogs()" class="apple-btn py-1 px-3 rounded bg-primary text-white text-xs font-title-sm hover:bg-primary-container transition-colors">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Centralized Motion Design System & Application Scripts -->
+  <script src="/app/motion/motion-tokens.js"></script>
+  <script src="/app/motion/motion-engine.js"></script>
+  <script src="/app/motion/motion-theme.js"></script>
+  <script src="/app/motion/caption-animations.js"></script>
+  <script src="/app/shader.js"></script>
+  <script src="/app/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+{
+  "name": "klyptra-studio",
+  "version": "1.0.0",
+  "description": "KLYPTRA - Personal AI Video Clipping Studio",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "backend": "python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win nsis zip --x64"
+  },
+  "keywords": [
+    "ai",
+    "video",
+    "clipping",
+    "whisper",
+    "ffmpeg",
+    "desktop"
+  ],
+  "author": "KLYPTRA",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^45.3.0",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "com.klyptra.studio",
+    "productName": "KLYPTRA Studio",
+    "copyright": "Copyright © 2026 KLYPTRA",
+    "asar": false,
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "app/**/*",
+      "index.html",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/bin",
+        "to": "bin",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "resources/backend",
+        "to": "backend",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "${productName}-Setup-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "KLYPTRA Studio",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
+    }
+  }
+}
